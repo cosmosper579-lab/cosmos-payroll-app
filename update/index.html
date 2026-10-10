@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v104">
-<title>💰 จ่ายเงินคนงาน PRO v104</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v105">
+<title>💰 จ่ายเงินคนงาน PRO v105</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -945,7 +945,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v104 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v105 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1222,7 +1222,7 @@ body::before{
         <div class="form-card">
           <div class="form-title">⏰ บันทึกเวลาทำงาน</div>
           <div class="form-row">
-            <div class="form-field"><label>💰 ค่าแรง/วัน</label><input type="number" class="finput" id="dailyWage" value="300" min="0" step="10" oninput="calcWage()"></div>
+            <div class="form-field"><label>💰 ค่าแรง/วัน</label><input type="number" class="finput" id="dailyWage" value="330" min="0" step="10" oninput="calcWage()"></div>
             <div class="form-field"><label>⏱️ อัตรา/ชม.</label><input type="text" class="finput" id="hourlyRate" readonly=""></div>
           </div>
           <div class="form-row">
@@ -1235,7 +1235,7 @@ body::before{
           </div>
           <div class="wage-box">
             <span class="wage-lbl">⏱️ รวม: <strong id="totalTime">8ชม. 0น.</strong></span>
-            <span class="wage-val">฿<span id="totalWage">300.00</span></span>
+            <span class="wage-val">฿<span id="totalWage">330.00</span></span>
           </div>
           <button class="btn-primary" onclick="saveWorkTime()">✅ บันทึกเวลาทำงาน</button>
           <div style="display:flex;gap:7px;margin-top:7px">
@@ -1732,7 +1732,7 @@ body::before{
   <div class="modal"><h2>➕ เพิ่มคนงาน</h2>
     <label>ชื่อ</label><input type="text" id="mwName" placeholder="ชื่อคนงาน" onkeydown="if(event.key===&#39;Enter&#39;)addWorker()">
     <label>อีโมจิ</label><input type="text" id="mwEmoji" value="👤" maxlength="2">
-    <label>ค่าแรง/วัน (บาท)</label><input type="number" id="mwWage" value="300" min="0">
+    <label>ค่าแรง/วัน (บาท)</label><input type="number" id="mwWage" value="330" min="0">
     <div class="modal-btns">
       <button class="m-save" onclick="addWorker()">✅ บันทึก</button>
       <button class="m-cancel" onclick="closeModal(&#39;addWorkerModal&#39;)">ยกเลิก</button>
@@ -2362,6 +2362,7 @@ function localISO(d) {
             window.__applyingRemoteData = false;
           }
           try { if (typeof window.onRemoteApplied === 'function') window.onRemoteApplied(); } catch(e) {}
+          try { window.__v105AfterMigrate && window.__v105AfterMigrate(); } catch(e) {}
           if(typeof renderAll === 'function') renderAll();
           if(typeof renderChips === 'function') renderChips();
           setSyncBadge('🔄 ซิงค์ข้อมูลใหม่แล้ว', 'rgba(45,158,92,.35)');
@@ -2388,6 +2389,7 @@ function localISO(d) {
             window.__applyingRemoteData = false;
           }
           try { if (typeof window.onRemoteApplied === 'function') window.onRemoteApplied(); } catch(e) {}
+          try { window.__v105AfterMigrate && window.__v105AfterMigrate(); } catch(e) {}
           if(typeof renderAll === 'function') renderAll();
           if(typeof renderChips === 'function') renderChips();
           setSyncBadge('🔄 ซิงค์ข้อมูลใหม่แล้ว', 'rgba(45,158,92,.35)');
@@ -3682,7 +3684,7 @@ function sanitizeWorker(w) {
   if (!w.pending) w.pending = [];
   if (!w.emoji) w.emoji = '👤';
   if (w.balance === undefined) w.balance = 0;
-  if (!w.dailyWage && w.dailyWage !== 0) w.dailyWage = 300;
+  if (!w.dailyWage && w.dailyWage !== 0) w.dailyWage = 330;
   
   // ตรวจสอบและกำหนด ID
   if (!w.id) w.id = uid();
@@ -3731,7 +3733,7 @@ function sanitize() {
 }
 
 // v104: เลขรุ่นโครงสร้างข้อมูล — ใช้ตอนโหลด / Restore / รับจาก Firebase
-const SCHEMA_VERSION = 104;
+const SCHEMA_VERSION = 105;
 function migrateData() {
   const owner = workers.find(w => w.id == OWNER_ID);
   const from = Number(owner && owner.schemaVersion) || 0;
@@ -3744,6 +3746,19 @@ function migrateData() {
       seen.add(String(h.id));
     });
   });
+  // v105: ค่าแรงรายวันเป็น 330 บาททุกคน (ทำครั้งเดียว) — รายการที่บันทึกไปแล้วยอดเท่าเดิม ไม่คิดย้อนหลัง
+  if (owner && from < 105) {
+    try { setStdWage(330); } catch (e) {}
+    workers.forEach(w => {
+      if (w.id == OWNER_ID) return;
+      if (Number(w.dailyWage) !== 330 || w.wageCustom !== false) {
+        w.dailyWage = 330;
+        w.wageCustom = false;
+        if (window.__dirtyWorkerIds) window.__dirtyWorkerIds.add(String(w.id));
+      }
+    });
+    window.__v105WageMigrated = true;
+  }
   if (owner && from < SCHEMA_VERSION) owner.schemaVersion = SCHEMA_VERSION;
 }
 
@@ -3946,6 +3961,7 @@ function setStdWage(v) {
 }
 function workerRate(w) {
   if (w && w.wageCustom && Number(w.dailyWage) > 0) return Number(w.dailyWage);
+  if (w && w.wageCustom === false) return getStdWage();   // v105: ใช้ค่าแรงมาตรฐาน
   // ข้อมูลเก่า: ถ้าค่าแรงไม่ใช่ค่าเริ่มต้นระบบ (300) ถือว่าตั้งเฉพาะคนไว้
   if (w && Number(w.dailyWage) > 0 && Number(w.dailyWage) !== 300) return Number(w.dailyWage);
   return getStdWage();
@@ -8456,7 +8472,7 @@ function addWorker() {
   const name = document.getElementById('mwName')?.value.trim();
   if (!name) return toast('⚠️ กรุณากรอกชื่อ');
   
-  const wage = parseFloat(document.getElementById('mwWage')?.value) || 300;
+  const wage = parseFloat(document.getElementById('mwWage')?.value) || getStdWage();
   const emoji = document.getElementById('mwEmoji')?.value.trim() || '👤';
   
   workers.push({
@@ -8464,6 +8480,7 @@ function addWorker() {
     name,
     emoji,
     dailyWage: wage,
+    wageCustom: wage !== getStdWage(),
     balance: 0,
     history: [],
     pending: []
@@ -8474,6 +8491,8 @@ function addWorker() {
   
   if (mwName) mwName.value = '';
   if (mwEmoji) mwEmoji.value = '👤';
+  const mwWage = document.getElementById('mwWage');
+  if (mwWage) mwWage.value = getStdWage();
   
   saveData();
   renderAll();
@@ -9945,6 +9964,7 @@ function init() {
   renderAll();
   renderChips();
   updateHdrDate();
+  window.__v105AfterMigrate && window.__v105AfterMigrate();
 const withdrawRefDateEl = document.getElementById('withdrawRefDate'); if (withdrawRefDateEl && !withdrawRefDateEl.value) withdrawRefDateEl.value = localISO();
   
   // รีเซ็ต currentWid ถ้าไม่มีคนงานนั้นแล้ว
@@ -11537,8 +11557,8 @@ let _wcYear = 0, _wcMonth = 0, _wcWid = null;
           <button class="wc-qbtn save" style="background:#dc2626;box-shadow:0 4px 14px rgba(220,38,38,.25)" onclick="wcQSave()">บันทึกขาดงาน</button>
         </div>`;
     } else {
-      const defaultWage = w.dailyWage || 300;
-      const presets = [200, 250, 300, 350, 400].filter((v,i,a) => a.indexOf(v) === i);
+      const defaultWage = workerRate(w);
+      const presets = [200, 250, 300, 330, 350, 400].filter((v,i,a) => a.indexOf(v) === i);
       if (!presets.includes(defaultWage)) presets.push(defaultWage);
       presets.sort((a,b) => a-b);
 
@@ -12559,6 +12579,7 @@ window.addEventListener('load', function() {
       <span style="font-weight:700">💰 ค่าแรงมาตรฐาน/วัน</span>
       <input type="number" id="stdWageInput" min="0" step="10" style="width:110px">
       <button class="btn-tool" onclick="saveStdWageFromUI()">บันทึก</button>
+      <button class="btn-tool" onclick="applyStdWageToAll()">👥 ใช้กับทุกคน</button>
       <span style="font-size:.75rem;color:var(--ink3)">ใช้กับทุกหน้าที่กรอกค่าแรง · คนที่ตั้งค่าแรงเฉพาะตัวไว้จะใช้ค่าของคนนั้น</span>
     </div>
     <div id="ledgerAuditSummary" style="margin-bottom:8px;font-weight:700"></div>
@@ -12589,6 +12610,27 @@ function openLedgerAudit() {
     + ' · ยอดค้างจ่ายรวม ' + f(tot.o) + ' บาท';
   renderAll();
   openModal('ledgerAuditModal');
+}
+// v105: หลังปรับค่าแรงเป็น 330 ทุกคน บันทึก + ส่งขึ้นระบบหลายเครื่อง ครั้งเดียว
+window.__v105AfterMigrate = function () {
+  if (!window.__v105WageMigrated) return;
+  window.__v105WageMigrated = false;
+  setTimeout(function () { saveData(); toast('✅ ปรับค่าแรงเป็น 330 บาท/วัน ทุกคนแล้ว'); }, 300);
+};
+function applyStdWageToAll() {
+  const v = parseFloat(document.getElementById('stdWageInput').value);
+  if (!(v > 0)) return toast('⚠️ กรอกค่าแรงให้ถูกต้อง');
+  const list = (workers || []).filter(w => w.id != OWNER_ID);
+  requirePin('ตั้งค่าแรง ' + v + ' บาท/วัน ให้คนงานทุกคน (' + list.length + ' คน) — รายการที่บันทึกไปแล้วยอดเท่าเดิม', () => {
+    setStdWage(v);
+    list.forEach(w => { w.dailyWage = v; w.wageCustom = false; recalcWorker(w); });
+    const dw = document.getElementById('dailyWage');
+    const cw = list.find(x => x.id == currentWid);
+    if (dw && cw) { dw.value = v; calcWage(); }
+    renderAll(); saveData();
+    if (document.getElementById('ledgerAuditModal').classList.contains('on')) openLedgerAudit();
+    toast('✅ ค่าแรง ' + formatMoney(v) + '/วัน ทุกคนแล้ว');
+  });
 }
 function saveStdWageFromUI() {
   const v = document.getElementById('stdWageInput').value;
