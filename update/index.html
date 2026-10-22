@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v108">
-<title>💰 จ่ายเงินคนงาน PRO v108</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v109">
+<title>💰 จ่ายเงินคนงาน PRO v109</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -954,7 +954,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v108 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v109 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -14373,8 +14373,8 @@ function renderWorkerBillHtml(B){
     + '.bar{display:flex;gap:8px;justify-content:center;margin-bottom:14px}.bar button{font-size:1rem;padding:8px 14px;border-radius:10px;border:1px solid #94a3b8;background:#f1f5f9;cursor:pointer}'
     + '@media print{.bar{display:none}body{padding:6px}}'
     + '</style></head><body>'
-    + '<div class="bar"><button onclick="window.print()">🖨️ พิมพ์</button>'
-    + (B.hasOlder || B.all ? '<button onclick="opener && opener.printWorkerBill(' + JSON.stringify(w.id) + ',' + (!B.all) + ');window.close()">' + (B.all ? '📄 ดูแค่ช่วงล่าสุด' : '📜 ดูทุกรายการตั้งแต่เริ่ม') + '</button>' : '')
+    + '<div class="bar"><button onclick="window.print()">🖨️ พิมพ์</button><button onclick="if(window.frameElement&&parent.closePrintPanel){parent.closePrintPanel()}else{window.close()}">✕ ปิด</button>'
+    + (B.hasOlder || B.all ? '<button onclick="var P=(window.frameElement&&parent.printWorkerBill)?parent:opener;if(P){P.printWorkerBill(' + JSON.stringify(w.id) + ',' + (!B.all) + ')}if(!window.frameElement)window.close()">' + (B.all ? '📄 ดูแค่ช่วงล่าสุด' : '📜 ดูทุกรายการตั้งแต่เริ่ม') + '</button>' : '')
     + '</div>'
     + '<h1>🧾 บิลยอดเงิน</h1>'
     + '<div class="sub">' + _billEsc(w.name) + ' · พิมพ์วันที่ ' + thaiDateStr(now) + ' เวลา ' + now.toTimeString().slice(0, 5) + ' น.</div>'
@@ -14398,6 +14398,41 @@ function printWorkerBill(wid, all){
   if (!w) return toast('❌ ไม่พบคนงาน');
   openPrintWindowHtml(renderWorkerBillHtml(buildWorkerBill(w, !!all)));
 }
+</script>
+<style id="print-panel-v109">
+#printPanel{position:fixed;inset:0;z-index:30000;background:rgba(15,23,42,.65);display:none;flex-direction:column;align-items:center;padding:12px}
+#printPanel.on{display:flex}
+#printPanel .pp-bar{display:flex;gap:10px;width:100%;max-width:760px;margin-bottom:10px}
+#printPanel .pp-bar button{flex:1;border:none;border-radius:14px;padding:14px;font-family:'Mitr',sans-serif;font-size:1.1rem;cursor:pointer}
+#printPanel .pp-print{background:#2563eb;color:#fff}
+#printPanel .pp-close{background:#fff;color:#b91c1c;border:2px solid #fecaca!important}
+#printPanel iframe{flex:1;width:100%;max-width:760px;border:none;border-radius:14px;background:#fff}
+</style>
+<div id="printPanel"><div class="pp-bar"><button class="pp-print" onclick="printPanelPrint()">🖨️ พิมพ์</button><button class="pp-close" onclick="closePrintPanel()">✕ ปิด</button></div><iframe id="printPanelFrame" title="ใบพิมพ์"></iframe></div>
+<script id="print-panel-v109-js">
+// v109: ในโปรแกรมที่ติดตั้งในคอม หน้าต่างพิมพ์แยก (window.open + พิมพ์อัตโนมัติ) ค้างจนกดปิดไม่ได้
+// → เปิดใบพิมพ์ทุกแบบเป็นแผงในหน้าเดียวกันแทน กดปิดได้เสมอ · เปิดในเบราว์เซอร์ปกติยังเป็นหน้าต่างแยกเหมือนเดิม
+function printPanelPrint(){
+  var f = document.getElementById('printPanelFrame');
+  try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { toast('❌ พิมพ์ไม่ได้: ' + e.message); }
+}
+function closePrintPanel(){
+  var p = document.getElementById('printPanel'), f = document.getElementById('printPanelFrame');
+  if (p) p.classList.remove('on');
+  if (f) f.srcdoc = '';
+}
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.getElementById('printPanel').classList.contains('on')) closePrintPanel();
+});
+(function(){
+  var _origPrintWin = openPrintWindowHtml;
+  openPrintWindowHtml = function(html){
+    if (!window.desktopApp) return _origPrintWin(html);
+    var f = document.getElementById('printPanelFrame');
+    f.srcdoc = String(html).replace(/<style>/, '<style>.bar>button:nth-child(-n+2){display:none!important}');
+    document.getElementById('printPanel').classList.add('on');
+  };
+})();
 </script>
 </body></html>
 <script id="fixed-backup-folder">
