@@ -1,6 +1,6 @@
 {
- "version": 105,
- "notes": "ค่าแรง 330 บาท/วัน ทุกคน",
+ "version": 108,
+ "notes": "ป๊อปอัพ ! ถามหัก/ไม่หักเบิกล่วงหน้า + พิมพ์บิลบอกเหตุผลยอดติด",
  "file": "index.html",
- "sha256": "03d369c9fa73efead76c0adac44b75a18c98397e49f31fdb4ca11ed0209e9b36"
+ "sha256": "c2bf5f7d1ad976f056550c6184235319c1c7e535592b0deadd0a8a0e674bcf6e"
 }
