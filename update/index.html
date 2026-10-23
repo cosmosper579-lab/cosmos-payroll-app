@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v109">
-<title>💰 จ่ายเงินคนงาน PRO v109</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v112">
+<title>💰 จ่ายเงินคนงาน PRO v112</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -954,7 +954,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v109 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v112 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -10975,6 +10975,8 @@ document.addEventListener('DOMContentLoaded', init);
   }
 
   // v104: ให้ระบบซิงค์/ย่อรูป เรียกโหลดสลิปใหม่จากเครื่องได้ (ข้อมูลสลิปอยู่ในตัวแปรของโมดูลนี้)
+  // v110: ให้ป๊อปอัพแนบสลิปใช้ตัวอ่านสลิปเดิมร่วมกัน
+  window.__slipTools = { parse: parseSlip, resize: resizeImg };
   window.__slipApi = {
     get: function () { return slipExpenses; },
     reload: function () { loadSlipData(); if (window.renderSlipList) window.renderSlipList(); refreshFilter(); },
@@ -13798,8 +13800,8 @@ body, table, th, td, button, input, select, textarea { line-height: 1.5; }
   const isQuota = e => e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014 || /quota/i.test(String(e.message || e)));
 
   /* ---------------- 1) ซิงค์ข้อมูลในเครื่อง ---------------- */
-  const SHARED_KEYS = ['dailyAttendancePanel', 'slip_expenses_v1', 'customContractTypes', 'buddingSettings', 'payroll_std_wage_v89', 'sd_org_name_v87'];
-  const SHARED_NAME = { dailyAttendancePanel: 'เช็คชื่อรายวัน', slip_expenses_v1: 'สลิปค่าใช้จ่าย', customContractTypes: 'ประเภทงานเหมาที่เพิ่มเอง', buddingSettings: 'ตั้งค่าติดตายาง', payroll_std_wage_v89: 'ค่าแรงมาตรฐาน', sd_org_name_v87: 'ชื่อกิจการ' };
+  const SHARED_KEYS = ['dailyAttendancePanel', 'slip_expenses_v1', 'equip_slips_v111', 'customContractTypes', 'buddingSettings', 'payroll_std_wage_v89', 'sd_org_name_v87'];
+  const SHARED_NAME = { dailyAttendancePanel: 'เช็คชื่อรายวัน', slip_expenses_v1: 'สลิปค่าใช้จ่าย', equip_slips_v111: 'รูปสลิปซื้ออุปกรณ์', customContractTypes: 'ประเภทงานเหมาที่เพิ่มเอง', buddingSettings: 'ตั้งค่าติดตายาง', payroll_std_wage_v89: 'ค่าแรงมาตรฐาน', sd_org_name_v87: 'ชื่อกิจการ' };
   const META = 'payroll_shared_meta_v104';
   const P = Storage.prototype, _set = P.setItem, _rem = P.removeItem, _get = P.getItem;
   let applying = false;
@@ -13835,7 +13837,7 @@ body, table, th, td, button, input, select, textarea { line-height: 1.5; }
   function mergeLegacy(k, localStr, remoteStr) {
     try {
       const L = JSON.parse(localStr), R = JSON.parse(remoteStr);
-      if ((k === 'slip_expenses_v1' || k === 'customContractTypes') && Array.isArray(L) && Array.isArray(R)) {
+      if ((k === 'slip_expenses_v1' || k === 'equip_slips_v111' || k === 'customContractTypes') && Array.isArray(L) && Array.isArray(R)) {
         const seen = new Set(R.map(x => String(x && x.id)));
         return JSON.stringify(R.concat(L.filter(x => x && !seen.has(String(x.id)))));
       }
@@ -14434,6 +14436,663 @@ document.addEventListener('keydown', function(e){
   };
 })();
 </script>
+<!-- ═══════ v110–111: ป๊อปอัพแนบสลิป/บิล → บันทึกรายจ่ายอัตโนมัติ (ลอยเหนือปุ่ม COSMOS รวม) + ลากวาง/⌘V ได้ทั้งหน้า ═══════ -->
+<style id="slip-sheet-v110">
+#slipFab{position:fixed;right:18px;bottom:74px;z-index:1600;background:var(--green,#2d9e5c);color:#fff;border:none;border-radius:999px;padding:12px 18px;font-family:'Mitr',sans-serif;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:6px}
+#slipFab:active{transform:scale(.97)}
+body:has(#cbm-panel.open) #slipFab,body.ss-open #slipFab{display:none}
+@media(max-width:880px){
+  #slipFab{bottom:calc(var(--mob-nav-h) + var(--safe-b) + 66px)!important;right:12px!important}
+  body.mob-overlay #slipFab{display:none!important}
+}
+.ss-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1700;display:none;align-items:flex-end;justify-content:center}
+.ss-bg.on{display:flex}
+.ss-sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.25);animation:ssUp .25s ease;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(min-width:881px){.ss-bg{align-items:flex-end;justify-content:flex-end;padding:0 18px 74px 0}.ss-sheet{border-radius:22px;width:440px;max-height:calc(100vh - 100px)}}
+@keyframes ssUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.ss-grab{width:52px;height:5px;border-radius:9px;background:#cfd6d0;margin:10px auto 2px}
+.ss-head{display:flex;justify-content:space-between;align-items:center;padding:8px 20px 12px;border-bottom:1px solid #e5e7eb}
+.ss-head b{font-family:'Mitr',sans-serif;font-size:1.15rem;color:#1e293b}
+.ss-x{background:none;border:none;font-size:1.5rem;color:#475569;cursor:pointer;padding:2px 8px;line-height:1}
+.ss-body{padding:16px 18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.ss-big{width:100%;border-radius:16px;padding:18px 14px;font-family:'Mitr',sans-serif;font-size:1.05rem;cursor:pointer;border:1.5px solid #d6dbd7;background:#fff;color:#1e293b;text-align:center;line-height:1.35}
+.ss-big small{display:block;font-size:.78rem;color:#64748b;margin-top:3px;font-family:'Sarabun',sans-serif}
+.ss-big.green{background:var(--green,#2d9e5c);border-color:var(--green,#2d9e5c);color:#fff}
+.ss-big.green small{color:rgba(255,255,255,.85)}
+.ss-big.orange{background:#ea8a1a;border-color:#ea8a1a;color:#fff}
+.ss-big:disabled{opacity:.5;cursor:wait}
+.ss-big:active{transform:scale(.99)}
+.ss-link{background:none;border:none;color:#475569;font-family:'Mitr',sans-serif;font-size:.9rem;cursor:pointer;padding:8px;text-decoration:underline}
+.ss-today{background:#f1f5f9;border-radius:14px;padding:12px 14px;font-size:.85rem;color:#334155}
+.ss-today .t{font-family:'Mitr',sans-serif;font-size:.95rem;color:#1e293b;display:flex;justify-content:space-between}
+.ss-today .r{display:flex;justify-content:space-between;padding:4px 0;border-top:1px dashed #cbd5e1;margin-top:4px}
+.ss-img{display:flex;gap:12px;align-items:center}
+.ss-img img{width:74px;height:96px;object-fit:cover;border-radius:10px;border:1.5px solid #e2e8f0;cursor:zoom-in;flex-shrink:0;background:#f8fafc}
+.ss-img img.big{width:100%;height:auto;max-height:60vh;object-fit:contain;cursor:zoom-out}
+.ss-img.bigwrap{flex-direction:column}
+.ss-stat{font-family:'Mitr',sans-serif;font-size:.9rem;color:#1e3a8a;flex:1}
+.ss-bar{height:8px;border-radius:9px;background:#e2e8f0;overflow:hidden;margin-top:6px}
+.ss-bar i{display:block;height:100%;width:0;background:#3b82f6;transition:width .2s}
+.ss-step{display:inline-block;background:#1e3a8a;color:#fff;border-radius:999px;padding:2px 12px;font-family:'Mitr',sans-serif;font-size:.8rem;align-self:flex-start}
+.ss-f label{display:block;font-family:'Mitr',sans-serif;font-size:.9rem;color:#334155;margin-bottom:5px}
+.ss-f label em{font-style:normal;color:#e63946}
+.ss-in{width:100%;box-sizing:border-box;border:2px solid #cbd5e1;border-radius:12px;padding:12px 14px;font-size:16px;font-family:'Sarabun',sans-serif;color:#0f172a;background:#fff}
+.ss-in:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.ss-in.amt{font-family:'Mitr',sans-serif;font-size:1.5rem;text-align:right;color:#b91c1c}
+.ss-in.need{border-color:#f59e0b;background:#fffbeb}
+.ss-hint{font-size:.8rem;color:#64748b;margin-top:4px}
+.ss-hint.ok{color:#15803d}
+.ss-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px}
+.ss-chip{border:1.5px solid #cbd5e1;background:#fff;border-radius:999px;padding:7px 12px;font-family:'Sarabun',sans-serif;font-size:.88rem;cursor:pointer;color:#1e293b}
+.ss-chip.on{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.ss-warn{background:#fff7ed;border:1.5px solid #fdba74;color:#9a3412;border-radius:12px;padding:10px 12px;font-size:.88rem;line-height:1.45}
+.ss-check{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:14px;padding:12px 14px;font-size:.92rem;color:#1e293b;line-height:1.6}
+.ss-check b{font-family:'Mitr',sans-serif}
+.ss-done{text-align:center;padding:10px 0}
+.ss-done .ic{font-size:3rem}
+.ss-done .a{font-family:'Mitr',sans-serif;font-size:1.6rem;color:#15803d}
+.ss-drop{outline:3px dashed #3b82f6;outline-offset:-8px}
+#ssDropOv{position:fixed;inset:0;z-index:1800;display:none;align-items:center;justify-content:center;background:rgba(30,58,138,.55);pointer-events:none;padding:24px}
+#ssDropOv.on{display:flex}
+#ssDropOv div{background:#fff;border:4px dashed #2d9e5c;border-radius:26px;padding:36px 40px;text-align:center;font-family:'Mitr',sans-serif;color:#1e293b;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#ssDropOv b{display:block;font-size:1.5rem;margin:8px 0 4px;color:#15803d}
+#ssDropOv span{font-size:3.4rem}
+#ssDropOv small{font-family:'Sarabun',sans-serif;font-size:1rem;color:#475569}
+</style>
+
+<button id="slipFab" type="button" onclick="ssOpen()" title="กดเพื่อแนบสลิป หรือลากรูปสลิปมาวางในหน้านี้ได้เลย">📷 แนบสลิป / บิล</button>
+
+<div class="ss-bg" id="ssBg" onclick="if(event.target===this)ssClose()">
+  <div class="ss-sheet" role="dialog" aria-modal="true" aria-labelledby="ssTitle">
+    <div class="ss-grab"></div>
+    <div class="ss-head"><b id="ssTitle">เพิ่มรายจ่าย</b><button type="button" class="ss-x" onclick="ssClose()" aria-label="ปิด">✕</button></div>
+    <div class="ss-body" id="ssBody"></div>
+  </div>
+</div>
+<input type="file" id="ssFile" accept="image/*" multiple style="display:none">
+<div id="ssDropOv" aria-hidden="true"><div><span>📥</span><b>ปล่อยสลิปตรงนี้ได้เลย</b><small>ระบบจะอ่านยอดเงิน แล้วให้ตรวจก่อนบันทึกเป็น ซื้ออุปกรณ์ (เจ้าของจ่าย)</small></div></div>
+
+<script id="slip-sheet-v110-js">
+/* v110: ป๊อปอัพแนบสลิป/ใบเสร็จ → อ่านด้วย OCR → ตรวจ → บันทึกเป็นรายจ่าย (ไม่มีรายรับ)
+   บันทึกลงรายการเดิม slip_expenses_v1 (ตาราง "บันทึกค่าใช้จ่ายจากสลิปโอนเงิน") จึงซิงค์ข้ามเครื่องตามเดิม */
+var ssQueue = [];        // ไฟล์ที่รออ่าน
+var ssTotalInBatch = 0;
+var ssCur = null;        // ใบที่กำลังตรวจ {img, thumb, text, ref, guessType, ocrDone}
+var ssLastSavedId = null;
+var ssDupConfirmed = false;
+
+var SS_DEFAULT_TYPES = ['น้ำมัน', 'ปุ๋ย', 'ถุงเพาะชำ', 'อะไหล่/ซ่อม', 'ยา/สารเคมี', 'ค่าไฟ', 'ของใช้'];
+var SS_RULES = [
+  [/น้ำมัน|ดีเซล|แก๊สโซฮอล|เบนซิน|diesel|gasohol|ปตท|PTT|บางจาก|bangchak|shell|เชลล์|คาลเท็กซ์|caltex|พีที\s|PT\s?MAX/i, 'น้ำมัน'],
+  [/ปุ๋ย|fertili/i, 'ปุ๋ย'],
+  [/ถุงเพาะ|ถุงดำ|ถุงชำ/i, 'ถุงเพาะชำ'],
+  [/การไฟฟ้า|ค่าไฟ|PEA\b|Provincial Electricity/i, 'ค่าไฟ'],
+  [/ประปา|ค่าน้ำ(?!มัน)/i, 'ค่าน้ำประปา'],
+  [/ยาฆ่า|กำจัดวัชพืช|ไกลโฟเซต|สารเคมี|ยากำจัด/i, 'ยา/สารเคมี'],
+  [/อะไหล่|ซ่อม|ยาง(?:รถ|นอก|ใน)|แบตเตอรี่/i, 'อะไหล่/ซ่อม'],
+  [/เติมเงิน|AIS|dtac|TrueMove|ทรูมูฟ|ค่าโทร/i, 'ค่าโทรศัพท์'],
+  [/7-?eleven|เซเว่น|แม็?คโคร|makro|โลตัส|lotus|บิ๊กซี|big\s?c/i, 'ของใช้'],
+  [/ค่าแรง|ค่าจ้าง/i, 'ค่าแรง'],
+  [/ขนส่ง|ค่ารถ|ค่าส่ง|แฟลช|flash|kerry|เคอรี่|ไปรษณีย์/i, 'ค่าขนส่ง'],
+  [/แกลบ|ขี้วัว|มูลวัว|ดินผสม|ขุยมะพร้าว/i, 'วัสดุเพาะชำ'],
+  [/อาหาร|ร้านข้าว|ก๋วยเตี๋ยว|ส้มตำ/i, 'อาหาร']
+];
+
+function ssEl(id) { return document.getElementById(id); }
+/* v112: รายจ่ายจากป๊อปอัพ = "ซื้ออุปกรณ์" ของเจ้าของ (กิจการ OWNER_ID) แบบเดียวกับปุ่ม 🛒 ซื้ออุปกรณ์ */
+var SS_IMG_KEY = 'equip_slips_v111';
+function ssOwner() { try { return (workers || []).find(function (w) { return w.id == OWNER_ID; }) || null; } catch (e) { return null; } }
+function ssEquip() { var o = ssOwner(); return o ? (o.history || []).filter(function (h) { return h && h.type === 'equipment'; }) : []; }
+function ssItemOf(h) { return h.item || String(h.detail || '').replace(/^ซื้อ\s*/, '').split(' · ')[0]; }
+function ssPayeeOf(h) { return h.payee || (String(h.detail || '').split(' · ')[1] || ''); }
+function ssImgs() { try { var a = JSON.parse(localStorage.getItem(SS_IMG_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function ssImgPut(id, thumb) {
+  if (!thumb) return;
+  var a = ssImgs().filter(function (x) { return x && String(x.id) !== String(id); });
+  a.push({ id: id, thumb: thumb, ts: Date.now() });
+  try { localStorage.setItem(SS_IMG_KEY, JSON.stringify(a)); } catch (e) { toast('⚠️ เครื่องเต็ม เก็บรูปสลิปไม่ได้ (รายการบันทึกแล้ว)'); }
+}
+function ssImgDel(id) { try { localStorage.setItem(SS_IMG_KEY, JSON.stringify(ssImgs().filter(function (x) { return x && String(x.id) !== String(id); }))); } catch (e) {} }
+function ssImgOf(id) { var a = ssImgs(); for (var i = 0; i < a.length; i++) if (a[i] && String(a[i].id) === String(id)) return a[i].thumb; return null; }
+function ssEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function ssMoney(n) { return Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function ssRound2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function ssList() { return (window.__slipApi && window.__slipApi.get()) || []; }
+function ssNorm(s) { return String(s || '').replace(/^(?:นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.|MR\.?|MRS\.?|MS\.?)\s*/i, '').replace(/[\s.]/g, '').toLowerCase(); }
+function ssThaiDigits(t) { return String(t || '').replace(/[๐-๙]/g, function (c) { return String(c.charCodeAt(0) - 0x0E50); }); }
+function ssTodayISO() { return (typeof localISO === 'function') ? localISO() : new Date().toISOString().slice(0, 10); }
+function ssThaiDate(iso) {
+  var d = new Date(iso + 'T12:00:00');
+  if (isNaN(d.getTime())) return '';
+  return 'วัน' + (typeof dayName === 'function' ? dayName(d) : '') + 'ที่ ' + thaiDateStr(d);
+}
+
+/* ---------- เปิด / ปิด ---------- */
+function ssOpen() {
+  ssQueue = []; ssCur = null; ssLastSavedId = null;
+  ssEl('ssBg').classList.add('on');
+  document.body.classList.add('ss-open');
+  ssRenderMenu();
+}
+function ssClose() {
+  ssEl('ssBg').classList.remove('on');
+  document.body.classList.remove('ss-open');
+  ssQueue = []; ssCur = null;
+}
+
+/* ---------- หน้าแรก: เลือกวิธี ---------- */
+function ssRenderMenu() {
+  ssEl('ssTitle').textContent = 'ซื้ออุปกรณ์ · เจ้าของจ่าย';
+  var todayTh = thaiDateStr(new Date());
+  var todays = ssEquip().filter(function (h) { return h.date === todayTh; });
+  var sum = todays.reduce(function (s, h) { return s + (-(Number(h.amount) || 0)); }, 0);
+  var recent = todays.slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }).slice(0, 4);
+  var h = ''
+    + '<button type="button" class="ss-big green" onclick="ssPick()">📷 แนบสลิป / ใบเสร็จ — ระบบอ่านแล้วบันทึกให้'
+    + '<small>ถ่ายรูปหรือเลือกรูป · เลือกหลายรูปพร้อมกันได้</small></button>'
+    + (window.matchMedia && window.matchMedia('(pointer:fine)').matches ? '<div class="ss-hint" style="text-align:center;font-size:.88rem">💡 ในคอม: <b>ลากรูปสลิปจาก LINE มาวางที่ไหนก็ได้ในหน้านี้</b> หรือก๊อปรูปแล้วกด <b>⌘V / Ctrl+V</b></div>' : '')
+    + '<button type="button" class="ss-big" onclick="ssManual()">✍️ บันทึกเอง<small>ไม่มีสลิป เช่น จ่ายเงินสด</small></button>'
+    + '<div class="ss-today"><div class="t"><span>🛒 ซื้ออุปกรณ์วันนี้ (เจ้าของจ่าย)</span><b>฿' + ssMoney(sum) + '</b></div>'
+    + (recent.length
+      ? recent.map(function (e) {
+          var img = ssImgOf(e.id);
+          return '<div class="r"><span>' + ssEsc(ssItemOf(e)) + (ssPayeeOf(e) && ssPayeeOf(e) !== ssItemOf(e) ? ' · ' + ssEsc(ssPayeeOf(e)) : '')
+            + (img ? ' <a href="#" onclick="ssShowImg(\'' + ssEsc(String(e.id)) + '\');return false" title="ดูสลิป">🧾</a>' : '')
+            + '</span><span>฿' + ssMoney(-(Number(e.amount) || 0)) + '</span></div>';
+        }).join('')
+        + (todays.length > 4 ? '<div class="ss-hint">และอีก ' + (todays.length - 4) + ' รายการ</div>' : '')
+      : '<div class="ss-hint">วันนี้ยังไม่มีรายการซื้ออุปกรณ์</div>')
+    + '</div>';
+  ssEl('ssBody').innerHTML = h;
+}
+function ssShowImg(id) {
+  var t = ssImgOf(id); if (!t) return;
+  ssEl('ssTitle').textContent = 'รูปสลิป';
+  ssEl('ssBody').innerHTML = '<img src="' + t + '" alt="สลิป" style="width:100%;border-radius:12px;border:1px solid #e2e8f0">'
+    + '<button type="button" class="ss-big" onclick="ssRenderMenu()">⬅️ กลับ</button>';
+}
+
+function ssPick() { var f = ssEl('ssFile'); f.value = ''; f.click(); }
+
+function ssAddFiles(files) {
+  var arr = [];
+  for (var i = 0; i < files.length; i++) if (files[i] && /^image\//.test(files[i].type)) arr.push(files[i]);
+  if (!arr.length) { toast('⚠️ เลือกได้เฉพาะรูปภาพ'); return; }
+  ssQueue = arr; ssTotalInBatch = arr.length;
+  ssNext();
+}
+
+function ssNext() {
+  if (!ssQueue.length) { ssRenderMenu(); return; }
+  var file = ssQueue.shift();
+  var rd = new FileReader();
+  rd.onload = function (ev) { ssStartItem(ev.target.result); };
+  rd.onerror = function () { toast('⚠️ เปิดรูปไม่ได้'); ssNext(); };
+  rd.readAsDataURL(file);
+}
+
+function ssManual() { ssQueue = []; ssTotalInBatch = 0; ssStartItem(null); }
+
+/* ---------- ย่อรูป ---------- */
+function ssScale(dataUrl, maxW, maxH, q) {
+  return new Promise(function (resolve) {
+    var img = new Image();
+    img.onload = function () {
+      var r = Math.min(maxW / img.width, maxH / img.height, 1);
+      var c = document.createElement('canvas');
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = function () { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
+/* ---------- เริ่มตรวจหนึ่งใบ ---------- */
+function ssStartItem(img) {
+  ssCur = { img: img, thumb: null, text: '', ref: '', guessType: '', ocrDone: !img };
+  ssDupConfirmed = false;
+  ssRenderReview();
+  if (!img) return;
+  ssScale(img, 320, 520, 0.65).then(function (t) { if (ssCur && ssCur.img === img) ssCur.thumb = t; });
+  if (typeof Tesseract === 'undefined') {
+    ssCur.ocrDone = true;
+    ssSetStat('⚠️ ตอนนี้อ่านรูปอัตโนมัติไม่ได้ (ไม่มีอินเทอร์เน็ต) — กรอกเองได้เลย', 100);
+    ssAfterOCR();
+    return;
+  }
+  var mine = ssCur;
+  ssScale(img, 1600, 2400, 0.92).then(function (big) {
+    return Tesseract.recognize(big, 'tha+eng', {
+      logger: function (m) {
+        if (mine !== ssCur) return;
+        if (m.status === 'recognizing text') ssSetStat('⏳ กำลังอ่านรูป... ' + Math.round((m.progress || 0) * 100) + '%', (m.progress || 0) * 100);
+        else ssSetStat('⏳ กำลังเตรียมอ่านรูป...', 5);
+      }
+    });
+  }).then(function (r) {
+    if (mine !== ssCur) return;
+    ssFill(r && r.data ? r.data.text : '');
+    ssSetStat('✅ อ่านแล้ว — ตรวจตัวเลขให้ถูกต้องก่อนกดบันทึก', 100);
+  }).catch(function () {
+    if (mine !== ssCur) return;
+    ssSetStat('⚠️ อ่านรูปไม่ออก — กรอกเองได้เลย', 100);
+  }).then(function () {
+    if (mine !== ssCur) return;
+    mine.ocrDone = true;
+    ssAfterOCR();
+  });
+}
+
+function ssSetStat(msg, pct) {
+  var s = ssEl('ssStat'), b = ssEl('ssBarI');
+  if (s) s.textContent = msg;
+  if (b) b.style.width = Math.max(0, Math.min(100, pct || 0)) + '%';
+}
+
+/* ---------- หน้าตรวจข้อมูล ---------- */
+function ssTypeChoices() {
+  var cnt = {};
+  ssEquip().forEach(function (h) { var it = ssItemOf(h); if (it) cnt[it] = (cnt[it] || 0) + 1; });
+  var used = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 6);
+  var out = used.slice();
+  SS_DEFAULT_TYPES.forEach(function (t) { if (out.indexOf(t) < 0) out.push(t); });
+  return out.slice(0, 10);
+}
+
+function ssRenderReview() {
+  var c = ssCur;
+  ssEl('ssTitle').textContent = c.img ? 'ตรวจสลิป · ซื้ออุปกรณ์' : 'บันทึกซื้ออุปกรณ์เอง';
+  var idx = ssTotalInBatch > 1 ? (ssTotalInBatch - ssQueue.length) : 0;
+  var chips = ssTypeChoices().map(function (t) {
+    return '<button type="button" class="ss-chip" data-t="' + ssEsc(t) + '" onclick="ssChip(this)">' + ssEsc(t) + '</button>';
+  }).join('');
+  var today = ssTodayISO();
+  var h = ''
+    + (idx ? '<span class="ss-step">ใบที่ ' + idx + ' จาก ' + ssTotalInBatch + '</span>' : '')
+    + (c.img
+      ? '<div class="ss-img" id="ssImgWrap"><img id="ssImg" src="' + c.img + '" alt="รูปสลิป" onclick="ssZoom()">'
+        + '<div class="ss-stat"><div id="ssStat">⏳ กำลังอ่านรูป...</div><div class="ss-bar"><i id="ssBarI"></i></div></div></div>'
+      : '')
+    + '<div class="ss-f"><label>① จ่ายไปกี่บาท <em>*</em></label>'
+    + '<input id="ssAmt" class="ss-in amt" inputmode="decimal" placeholder="0.00" autocomplete="off" oninput="ssTouch(this);ssLive()">'
+    + '<div class="ss-hint" id="ssAmtHint">พิมพ์บวกลบได้ เช่น 500+300</div></div>'
+    + '<div class="ss-f"><label>② ซื้ออะไร / ค่าอะไร <em>*</em> <span id="ssGuessNote" class="ss-hint" style="display:inline"></span></label>'
+    + '<div class="ss-chips" id="ssChips">' + chips + '</div>'
+    + '<input id="ssType" class="ss-in" placeholder="แตะเลือกด้านบน หรือพิมพ์เอง" autocomplete="off" oninput="ssTouch(this);ssSyncChips();ssLive()"></div>'
+    + '<div class="ss-f"><label>③ จ่ายให้ใคร / ร้านไหน</label>'
+    + '<input id="ssWho" class="ss-in" placeholder="ไม่ใส่ก็ได้" autocomplete="off" oninput="ssTouch(this);ssLive()"></div>'
+    + '<div class="ss-f"><label>④ วันที่จ่าย</label>'
+    + '<input id="ssDate" type="date" class="ss-in" value="' + today + '" max="' + today + '" oninput="ssTouch(this);ssLive()">'
+    + '<div class="ss-hint ok" id="ssDateTh">' + ssThaiDate(today) + '</div></div>'
+    + '<div id="ssWarn"></div>'
+    + '<div class="ss-check" id="ssCheck"></div>'
+    + '<button type="button" class="ss-big green" id="ssSaveBtn" onclick="ssSave()">✅ ถูกต้อง บันทึกเลย</button>'
+    + '<div style="display:flex;justify-content:center;gap:10px">'
+    + (ssQueue.length ? '<button type="button" class="ss-link" onclick="ssNext()">ข้ามใบนี้</button>' : '')
+    + '<button type="button" class="ss-link" onclick="ssRenderMenu();ssQueue=[];ssCur=null">ยกเลิก</button></div>';
+  ssEl('ssBody').innerHTML = h;
+  ssEl('ssBody').scrollTop = 0;
+  if (!c.img) setTimeout(function () { var a = ssEl('ssAmt'); if (a) a.focus(); }, 150);
+  ssLive();
+}
+
+function ssZoom() {
+  var w = ssEl('ssImgWrap'), i = ssEl('ssImg');
+  if (!w || !i) return;
+  i.classList.toggle('big'); w.classList.toggle('bigwrap');
+}
+function ssTouch(inp) { inp.dataset.touched = '1'; inp.classList.remove('need'); }
+function ssSet(id, v) { var e = ssEl(id); if (e && !e.dataset.touched && v != null && v !== '') e.value = v; }
+
+function ssChip(btn) {
+  var t = ssEl('ssType'); t.value = btn.getAttribute('data-t'); ssTouch(t);
+  ssSyncChips(); ssLive();
+}
+function ssSyncChips() {
+  var v = (ssEl('ssType') || {}).value || '';
+  var bs = document.querySelectorAll('#ssChips .ss-chip');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-t') === v.trim());
+}
+
+/* ---------- อ่านข้อความจากรูป → เติมช่อง ---------- */
+function ssReceiptAmount(t) {
+  var rx = /(?:ยอดสุทธิ|รวมทั้งสิ้น|ยอดรวม|รวมเงิน|ยอดชำระ|จำนวนเงินรวม|ยอดที่ต้องชำระ|grand\s*total|net\s*total|total|รวม)[^0-9\n]{0,15}([0-9][0-9,]*(?:\.[0-9]{1,2})?)/gi;
+  var m, best = null;
+  while ((m = rx.exec(t)) !== null) {
+    var v = parseFloat(m[1].replace(/,/g, ''));
+    if (v > 0 && v < 10000000 && (best === null || v > best)) best = v;
+  }
+  return best;
+}
+function ssShopName(raw) {
+  var lines = raw.split(/\n/);
+  for (var i = 0; i < Math.min(lines.length, 6); i++) {
+    var s = lines[i].replace(/[|_~*=#<>]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (s.length < 3 || s.length > 40) continue;
+    if (/ใบเสร็จ|ใบกำกับ|receipt|tax|invoice|เลขที่|วันที่|โทร|tel|\d{4,}/i.test(s)) continue;
+    if ((s.match(/[ก-๙a-zA-Z]/g) || []).length < 3) continue;
+    return s;
+  }
+  return '';
+}
+var SS_TH_MON = { 'ม.ค.': 1, 'ก.พ.': 2, 'มี.ค.': 3, 'เม.ย.': 4, 'พ.ค.': 5, 'มิ.ย.': 6, 'ก.ค.': 7, 'ส.ค.': 8, 'ก.ย.': 9, 'ต.ค.': 10, 'พ.ย.': 11, 'ธ.ค.': 12,
+  'มกราคม': 1, 'กุมภาพันธ์': 2, 'มีนาคม': 3, 'เมษายน': 4, 'พฤษภาคม': 5, 'มิถุนายน': 6, 'กรกฎาคม': 7, 'สิงหาคม': 8, 'กันยายน': 9, 'ตุลาคม': 10, 'พฤศจิกายน': 11, 'ธันวาคม': 12 };
+/* วันที่แบบไทย ปี 2 หลักในสลิปเป็น พ.ศ. (69 = 2569) */
+function ssThaiSlipDate(raw) {
+  var keys = Object.keys(SS_TH_MON).sort(function (a, b) { return b.length - a.length; })
+    .map(function (k) { return k.replace(/\./g, '\\.'); }).join('|');
+  var m = raw.match(new RegExp('(\\d{1,2})\\s*(' + keys + ')\\s*(\\d{2,4})'));
+  if (!m) return null;
+  var d = +m[1], mo = SS_TH_MON[m[2]], y = +m[3];
+  if (y < 100) y = 2500 + y - 543;
+  else if (y > 2400) y -= 543;
+  if (!mo || d < 1 || d > 31 || y < 2015 || y > 2045) return null;
+  return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+var SS_BANK_ONLY = /^(?:ธ\.?\s*)?(?:กรุงไทย|กสิกรไทย|กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงศรี(?:อยุธยา)?|ออมสิน|ทหารไทยธนชาต|ทีทีบี|ttb|ธ\.?ก\.?ส\.?|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน|แลนด์ แอนด์ เฮ้าส์|พร้อมเพย์|promptpay|ktb|kbank|scb|bbl|gsb|baac)\s*$/i;
+var SS_NOISE = /บาท|ค่าธรรมเนียม|จำนวน|เลขที่|รายการ|วันที่|เวลา|สำเร็จ|ยอด|อ้างอิง|ธนาคาร|บัญชี|โอนเงิน|สแกน|ตรวจสอบ|ชำระ|^ธ\./;
+/* สลิปโอน: ชื่อแรก = ผู้โอน ชื่อที่สอง = ผู้รับ (เอาบรรทัดชื่อที่ตามด้วยเลขบัญชี/พร้อมเพย์) */
+function ssSlipRecipient(raw) {
+  var lines = raw.split(/\n/).map(function (l) { return l.replace(/[|_~*=#<>:]/g, ' ').replace(/\s+/g, ' ').trim(); });
+  var names = [];
+  for (var i = 0; i < lines.length; i++) {
+    var s = lines[i].replace(/^(?:จาก|ไปยัง|ไปที่|ถึง|ผู้รับ|ผู้โอน|to|from)\s*/i, '');
+    if (SS_BANK_ONLY.test(s)) continue;
+    if (s.length < 3 || s.length > 45 || SS_NOISE.test(s) || /^\d/.test(s)) continue;
+    if ((s.match(/[ก-๙a-zA-Z]/g) || []).length < 3) continue;
+    var named = /^(?:นาย|นางสาว|นาง|น\.ส\.|คุณ|ร้าน|บริษัท|บจก|หจก|MRS?\.? |MS\.? )/i.test(s);
+    var nx = lines[i + 1] || '';
+    var acct = /x{2,}|X{2,}|\d{3}-|พร้อมเพย์|promptpay|\*{2,}/i.test(nx);
+    if (named || acct) names.push(s.replace(/\s*(?:x{2,}|X{2,}|\d{3}-).*$/, '').trim());
+    if (names.length === 2) break;
+  }
+  return names.length >= 2 ? names[1] : (names[0] || '');
+}
+function ssGuessType(text, who) {
+  var nw = ssNorm(who);
+  if (nw) {
+    var eq = ssEquip().slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    for (var k = 0; k < eq.length; k++) if (ssNorm(ssPayeeOf(eq[k])) === nw && ssItemOf(eq[k])) return { t: ssItemOf(eq[k]), why: 'เคยจ่ายให้ ' + who };
+    var hist = ssList().slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    for (var i = 0; i < hist.length; i++) {
+      if (hist[i] && hist[i].expenseType && ssNorm(hist[i].recipient) === nw) return { t: hist[i].expenseType, why: 'เคยจ่ายให้ ' + who };
+    }
+  }
+  var hay = (text || '') + ' ' + (who || '');
+  for (var j = 0; j < SS_RULES.length; j++) if (SS_RULES[j][0].test(hay)) return { t: SS_RULES[j][1], why: 'เดาจากข้อความในรูป' };
+  return null;
+}
+
+function ssFill(rawText) {
+  var raw = ssThaiDigits(rawText || '');
+  var flat = raw.replace(/\s+/g, ' ');
+  ssCur.text = raw;
+  var p = (window.__slipTools && window.__slipTools.parse) ? window.__slipTools.parse(raw) : { amount: null, recipient: null, date: null };
+  var isTransfer = /โอนเงิน|โอนสำเร็จ|ทำรายการสำเร็จ|transfer|พร้อมเพย์|promptpay|ธนาคาร|bank|k\+|scb|กสิกร|กรุงไทย|ออมสิน|ธ\.ก\.ส|baac|krungthai/i.test(flat);
+  var amt = isTransfer ? (p.amount || ssReceiptAmount(flat)) : (ssReceiptAmount(flat) || p.amount);
+  var pr = (p.recipient && !SS_NOISE.test(p.recipient)) ? p.recipient : '';
+  var who = isTransfer ? (ssSlipRecipient(raw) || pr) : (pr || ssShopName(raw));
+  var date = ssThaiSlipDate(raw) || p.date;
+  var today = ssTodayISO();
+  if (!date || date > today) date = null;
+  var rm = flat.match(/(?:เลขที่รายการ|รหัสรายการ|รหัสอ้างอิง|เลขอ้างอิง|หมายเลขอ้างอิง|ref(?:erence)?\.?\s*(?:no\.?|number)?|transaction\s*(?:id|no\.?))\s*[:：]?\s*([A-Za-z0-9]{6,})/i);
+  ssCur.ref = rm ? rm[1].toUpperCase() : '';
+  if (amt) ssSet('ssAmt', ssRound2(amt).toFixed(2));
+  if (who) ssSet('ssWho', who);
+  if (date) { ssSet('ssDate', date); }
+  var g = ssGuessType(flat, (ssEl('ssWho') || {}).value || who);
+  if (g) {
+    var t = ssEl('ssType');
+    if (t && !t.dataset.touched) {
+      t.value = g.t; ssCur.guessType = g.t;
+      var n = ssEl('ssGuessNote'); if (n) n.textContent = '(' + g.why + ')';
+      ssSyncChips();
+    }
+  }
+  ssLive();
+}
+
+function ssAfterOCR() {
+  var a = ssEl('ssAmt'), t = ssEl('ssType');
+  if (a && !a.value) a.classList.add('need');
+  if (t && !t.value) t.classList.add('need');
+  ssLive();
+  setTimeout(function () { if (a && !a.value) a.focus(); else if (t && !t.value) t.focus(); }, 120);
+}
+
+/* ---------- ตรวจสด + สรุปก่อนบันทึก ---------- */
+function ssReadAmount() {
+  var s = ((ssEl('ssAmt') || {}).value || '').trim();
+  if (!s) return { v: NaN, expr: false };
+  var expr = /[+\-*/×÷()]/.test(s.replace(/^-/, ''));
+  var v = (typeof safeEvalMath === 'function') ? safeEvalMath(s) : parseFloat(s.replace(/,/g, ''));
+  return { v: ssRound2(v), expr: expr, bad: !isFinite(v) };
+}
+function ssFindDup(amt, iso, who) {
+  var ref = ssCur && ssCur.ref, nw = ssNorm(who);
+  var dTh = thaiDateStr(new Date(iso + 'T12:00:00'));
+  var L = ssEquip();
+  for (var i = 0; i < L.length; i++) {
+    var e = L[i];
+    if (ref && e.ref && e.ref === ref) return e;
+    if (Math.abs(-(Number(e.amount) || 0) - amt) < 0.005 && e.date === dTh && ssNorm(ssPayeeOf(e) || 'ไม่ระบุ') === nw) return e;
+  }
+  return null;
+}
+function ssLive() {
+  if (!ssCur) return;
+  var a = ssReadAmount();
+  var type = ((ssEl('ssType') || {}).value || '').trim();
+  var who = ((ssEl('ssWho') || {}).value || '').trim();
+  var iso = (ssEl('ssDate') || {}).value || '';
+  var hint = ssEl('ssAmtHint');
+  if (hint) {
+    if (a.bad) { hint.textContent = '⚠️ ตัวเลขไม่ถูกต้อง'; hint.className = 'ss-hint'; }
+    else if (a.expr && isFinite(a.v)) { hint.textContent = '= ฿' + ssMoney(a.v); hint.className = 'ss-hint ok'; }
+    else { hint.textContent = 'พิมพ์บวกลบได้ เช่น 500+300'; hint.className = 'ss-hint'; }
+  }
+  var dth = ssEl('ssDateTh'); if (dth) dth.textContent = iso ? ssThaiDate(iso) : '⚠️ ยังไม่ได้เลือกวันที่';
+  var ok = isFinite(a.v) && a.v > 0 && type && iso;
+  var dup = ok ? ssFindDup(a.v, iso, who || 'ไม่ระบุ') : null;
+  var w = ssEl('ssWarn');
+  if (w) {
+    var msg = [];
+    if (dup) msg.push('⚠️ <b>อาจบันทึกซ้ำ</b> — มีรายการ ' + ssEsc(ssItemOf(dup)) + ' ฿' + ssMoney(-(Number(dup.amount) || 0)) + ' วันที่ ' + ssEsc(dup.date) + ' อยู่แล้ว ถ้าเป็นคนละรายการจริง กดบันทึกได้');
+    if (ok && a.v > 100000) msg.push('⚠️ ยอดสูงกว่า 100,000 บาท — ตรวจจำนวนเงินอีกครั้ง');
+    w.innerHTML = msg.length ? '<div class="ss-warn">' + msg.join('<br>') + '</div>' : '';
+  }
+  var ck = ssEl('ssCheck');
+  if (ck) ck.innerHTML = ok
+    ? 'จะบันทึกเป็น <b>🛒 ซื้ออุปกรณ์ · เจ้าของจ่าย</b><br>💸 <b>' + ssEsc(type) + '</b> ฿<b>' + ssMoney(a.v) + '</b><br>👤 ' + ssEsc(who || 'ไม่ระบุ') + ' · 📅 ' + ssEsc(thaiDateStr(new Date(iso + 'T12:00:00')))
+    : 'กรอกช่องที่มี <span style="color:#e63946">*</span> ให้ครบ แล้วกดบันทึก';
+  var btn = ssEl('ssSaveBtn');
+  if (btn) {
+    var waiting = !ssCur.ocrDone;
+    btn.disabled = waiting;
+    btn.className = 'ss-big ' + (dup ? 'orange' : 'green');
+    btn.textContent = waiting ? '⏳ รออ่านรูปสักครู่...' : (dup ? '⚠️ บันทึกซ้ำอยู่ดี' : '✅ ถูกต้อง บันทึกเลย');
+  }
+}
+
+/* ---------- บันทึก ---------- */
+function ssSave() {
+  if (!ssCur || !ssCur.ocrDone) return;
+  var owner = ssOwner();
+  if (!owner) { toast('❌ ไม่พบข้อมูลกิจการ'); return; }
+  var a = ssReadAmount();
+  var type = ssEl('ssType').value.trim();
+  var who = ssEl('ssWho').value.trim();
+  var iso = ssEl('ssDate').value;
+  if (!(isFinite(a.v) && a.v > 0)) { ssEl('ssAmt').classList.add('need'); ssEl('ssAmt').focus(); toast('⚠️ ใส่จำนวนเงินก่อน'); return; }
+  if (a.v >= 10000000) { toast('⚠️ จำนวนเงินมากผิดปกติ ตรวจอีกครั้ง'); return; }
+  if (!type) { ssEl('ssType').classList.add('need'); ssEl('ssType').focus(); toast('⚠️ เลือก "ซื้ออะไร" ก่อน'); return; }
+  if (!iso || iso > ssTodayISO()) { toast('⚠️ วันที่ไม่ถูกต้อง'); return; }
+  if (a.v > 100000 && !confirm('ยอด ฿' + ssMoney(a.v) + ' สูงมาก ยืนยันว่าถูกต้อง?')) return;
+  var now = new Date();
+  var d = new Date(iso + 'T00:00:00');
+  d.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+  var entry = {
+    id: uid(),
+    ts: d.getTime(),
+    date: thaiDateStr(d),
+    type: 'equipment',
+    amount: -a.v,
+    detail: (/^ค่า/.test(type) ? type : 'ซื้อ ' + type) + (who && who !== type ? ' · ' + who : ''),
+    item: type,
+    payee: who,
+    src: ssCur.img ? 'slip' : 'manual'
+  };
+  if (ssCur.ref) entry.ref = ssCur.ref;
+  owner.history = owner.history || [];
+  owner.history.push(entry);
+  recalcWorker(owner);
+  renderAll();
+  saveData();
+  if (ssCur.thumb) ssImgPut(entry.id, ssCur.thumb);
+  ssLastSavedId = entry.id;
+  ssCur = null;
+  ssRenderDone(entry);
+}
+
+function ssRenderDone(e) {
+  ssEl('ssTitle').textContent = 'บันทึกแล้ว';
+  var left = ssQueue.length;
+  ssEl('ssBody').innerHTML = ''
+    + '<div class="ss-done"><div class="ic">✅</div><div class="a">฿' + ssMoney(-e.amount) + '</div>'
+    + '<div>🛒 ' + ssEsc(e.detail) + '</div><div class="ss-hint">ซื้ออุปกรณ์ · เจ้าของจ่าย · ' + ssEsc(e.date) + '</div></div>'
+    + (left
+      ? '<button type="button" class="ss-big green" onclick="ssNext()">➡️ ใบต่อไป (เหลืออีก ' + left + ' ใบ)</button>'
+      : '<button type="button" class="ss-big green" onclick="ssPick()">📷 แนบใบต่อไป</button>')
+    + '<button type="button" class="ss-big" onclick="ssClose()">เสร็จแล้ว ปิดหน้านี้</button>'
+    + '<div style="text-align:center"><button type="button" class="ss-link" onclick="ssUndo()">↩️ บันทึกผิด ยกเลิกรายการนี้</button></div>';
+}
+
+function ssUndo() {
+  var id = ssLastSavedId;
+  if (!id) return;
+  ssClose();
+  requirePin('ยกเลิกรายการซื้ออุปกรณ์ที่เพิ่งบันทึก?', function () {
+    var owner = ssOwner(); if (!owner) return;
+    owner.history = (owner.history || []).filter(function (h) { return String(h.id) !== String(id); });
+    recalcWorker(owner);
+    renderAll();
+    saveData();
+    ssImgDel(id);
+    ssLastSavedId = null;
+    toast('↩️ ยกเลิกรายการแล้ว');
+  });
+}
+
+/* v112: ย้ายรายการที่เคยบันทึกจากป๊อปอัพ (v110–v111 ไปอยู่ในตารางสลิป) มาเป็น "ซื้ออุปกรณ์" ของเจ้าของ — ทำครั้งเดียว ไม่ซ้ำ */
+function ssMigratePopupSlips() {
+  if (!window.__slipApi) return;
+  var owner = ssOwner(); if (!owner) return;
+  var L = window.__slipApi.get();
+  var moved = L.filter(function (e) { return e && /^ป๊อปอัพ/.test(e.source || ''); });
+  if (!moved.length) return;
+  owner.history = owner.history || [];
+  var have = {}; owner.history.forEach(function (h) { if (h && h.mig) have[String(h.mig)] = 1; });
+  var n = 0, sum = 0;
+  moved.forEach(function (e) {
+    if (!have[String(e.id)]) {
+      var id = uid();
+      var amt = ssRound2(e.amount), who = (e.recipient && e.recipient !== 'ไม่ระบุ') ? e.recipient : '', it = e.expenseType || 'อุปกรณ์';
+      var h = { id: id, mig: String(e.id), ts: e.ts || Date.now(), date: e.date || thaiDateStr(new Date(e.ts || Date.now())), type: 'equipment', amount: -amt,
+        detail: (/^ค่า/.test(it) ? it : 'ซื้อ ' + it) + (who && who !== it ? ' · ' + who : ''), item: it, payee: who, src: 'slip' };
+      if (e.ref) h.ref = e.ref;
+      owner.history.push(h); n++; sum += amt;
+      if (e.slipThumb) ssImgPut(id, e.slipThumb);
+    }
+  });
+  for (var i = L.length - 1; i >= 0; i--) if (L[i] && /^ป๊อปอัพ/.test(L[i].source || '')) L.splice(i, 1);
+  window.__slipApi.save();
+  if (n) { recalcWorker(owner); renderAll(); saveData(); toast('🛒 ย้าย ' + n + ' รายการ (฿' + ssMoney(sum) + ') ไปเป็นซื้ออุปกรณ์ของเจ้าของแล้ว'); }
+}
+
+/* ---------- รับรูปจากการลากวาง / วาง ---------- */
+function ssTakeFiles(files) {
+  var arr = [];
+  for (var i = 0; i < files.length; i++) if (files[i] && /^image\//.test(files[i].type)) arr.push(files[i]);
+  if (!arr.length) { toast('⚠️ วางได้เฉพาะรูปภาพสลิป / ใบเสร็จ'); return; }
+  var open = ssEl('ssBg').classList.contains('on');
+  if (open && ssCur) {             // กำลังตรวจใบอื่นอยู่ → ต่อคิวไว้ ไม่ทับของเดิม
+    ssQueue = ssQueue.concat(arr);
+    ssTotalInBatch = Math.max(ssTotalInBatch, 1) + arr.length;
+    toast('📥 เพิ่มอีก ' + arr.length + ' รูป ต่อคิวไว้แล้ว');
+    return;
+  }
+  if (!open) ssOpen();
+  ssAddFiles(arr);
+}
+function ssFromTransfer(dt) {
+  var files = [];
+  if (dt.files && dt.files.length) for (var i = 0; i < dt.files.length; i++) files.push(dt.files[i]);
+  if (!files.length && dt.items) for (var j = 0; j < dt.items.length; j++) {
+    if (dt.items[j].kind === 'file') { var f = dt.items[j].getAsFile(); if (f) files.push(f); }
+  }
+  if (files.length) { ssTakeFiles(files); return; }
+  /* บางแอปส่งมาเป็นลิงก์รูป ไม่ใช่ไฟล์ → ลองดึงรูปจากลิงก์ */
+  var url = '';
+  try { url = (dt.getData('text/uri-list') || '').split(/\r?\n/).filter(function (l) { return l && l[0] !== '#'; })[0] || ''; } catch (e) {}
+  if (!url) { try { var h = dt.getData('text/html') || ''; var m = h.match(/<img[^>]+src=["']([^"']+)/i); if (m) url = m[1]; } catch (e) {} }
+  if (!url) { toast('⚠️ ลากรูปนี้มาไม่ได้ — ลองคลิกขวาที่รูปแล้ว "คัดลอก" จากนั้นกด ⌘V'); return; }
+  fetch(url).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+    if (!/^image\//.test(b.type)) throw 0;
+    ssTakeFiles([b]);
+  }).catch(function () { toast('⚠️ ดึงรูปจากลิงก์ไม่ได้ — คลิกขวาที่รูปแล้ว "คัดลอก" จากนั้นกด ⌘V หรือบันทึกรูปก่อนแล้วลากไฟล์มา'); });
+}
+
+/* ---------- ไฟล์ / ลากวาง / ปุ่มคีย์บอร์ด ---------- */
+(function () {
+  function init() {
+    var f = ssEl('ssFile');
+    if (f) f.addEventListener('change', function (e) { if (e.target.files && e.target.files.length) ssAddFiles(e.target.files); });
+    /* v111: ลากรูปสลิป (เช่นจาก LINE) มาวางที่ไหนก็ได้ในหน้า → เปิดป๊อปอัพอ่านให้ทันที */
+    var ov = ssEl('ssDropOv'), hideT = null;
+    function hasFiles(dt) {
+      if (!dt || !dt.types) return false;
+      for (var i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files' || dt.types[i] === 'text/uri-list' || dt.types[i] === 'public.file-url') return true;
+      return false;
+    }
+    function inOldZone(t) { return !!(t && t.closest && t.closest('#slipDropZone')); }
+    function showOv() { ov.classList.add('on'); clearTimeout(hideT); hideT = setTimeout(hideOv, 400); }
+    function hideOv() { ov.classList.remove('on'); }
+    document.addEventListener('dragover', function (e) {
+      if (!hasFiles(e.dataTransfer) || inOldZone(e.target)) { hideOv(); return; }
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'copy'; } catch (x) {}
+      showOv();
+    });
+    document.addEventListener('drop', function (e) {
+      hideOv();
+      if (e.defaultPrevented || inOldZone(e.target) || !hasFiles(e.dataTransfer)) return;
+      e.preventDefault();
+      ssFromTransfer(e.dataTransfer);
+    });
+    window.addEventListener('dragend', hideOv);
+    /* ก๊อปรูปแล้วกด ⌘V / Ctrl+V */
+    document.addEventListener('paste', function (e) {
+      var cd = e.clipboardData; if (!cd || !cd.items) return;
+      var files = [];
+      for (var i = 0; i < cd.items.length; i++) if (cd.items[i].kind === 'file' && /^image\//.test(cd.items[i].type)) { var f2 = cd.items[i].getAsFile(); if (f2) files.push(f2); }
+      if (!files.length) return;
+      e.preventDefault();
+      ssTakeFiles(files);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!ssEl('ssBg').classList.contains('on')) return;
+      if (e.key === 'Escape') ssClose();
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('ss-in')) { e.preventDefault(); ssSave(); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('load', function () { setTimeout(function () { try { ssMigratePopupSlips(); } catch (e) { console.warn('migrate popup slips', e); } }, 1200); });
+})();
+</script>
+<!-- ═══════ /v110 ═══════ -->
+
 </body></html>
 <script id="fixed-backup-folder">
 window.fixedFolderBackup = async function(reason) {
