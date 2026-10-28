@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v112">
-<title>💰 จ่ายเงินคนงาน PRO v112</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v115">
+<title>💰 จ่ายเงินคนงาน PRO v115</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -950,11 +950,12 @@ body::before{
     <button class="sd-item" onclick="sdGo(this,'slip')"><i>📷</i><span>สลิป</span></button>
     <div class="sd-sec">ระบบ</div>
     <button class="sd-item" onclick="sdGo(this,'add')"><i>➕</i><span>เพิ่มคนงาน</span></button>
+    <button class="sd-item" onclick="openSettingsMode()"><i>⚙️</i><span>ตั้งค่า (ผู้ดูแล)</span></button>
     <button class="sd-item" onclick="sdGo(this,'cmd')"><i>⌘</i><span>เมนูคำสั่ง</span></button>
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v112 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v115 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1080,15 +1081,9 @@ body::before{
       <button class="btn-tool" data-dup="1" onclick="openModal(&#39;addWorkerModal&#39;)">➕ คนงาน</button>
       <button class="btn-tool green-t" data-dup="1" onclick="openModal(&#39;equipModal&#39;)">🛒 ซื้ออุปกรณ์</button>
       <button class="btn-tool" data-dup="1" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;border-color:#7c3aed;font-weight:700" onclick="openContractMenu()">📦 งานเหมา</button>
-      <button class="btn-tool blue" onclick="backupJSON()">☁️ Backup</button>
-      <button class="btn-tool green-t" onclick="manualSelectBackupFolder()">📁 โฟลเดอร์สำรอง</button>
-      <button class="btn-tool" onclick="document.getElementById(&#39;restoreInput&#39;).click()">📥 Restore</button>
-      <button class="btn-tool" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#14532d;border-color:#86efac" onclick="document.getElementById('buddingImportInput').click()">📥 นำเข้าติดตายาง</button>
-      <button class="btn-tool red" onclick="downloadCSV()">📤 Export</button>
       <button class="btn-tool" data-dup="1" onclick="document.getElementById(&#39;slipSection&#39;).scrollIntoView({behavior:&#39;smooth&#39;})">📷 สลิป</button>
       <button class="btn-tool green-t" data-dup="1" onclick="document.getElementById('jobDashLabel').closest('.dash-card').scrollIntoView({behavior:'smooth'})">🌱 สรุปงาน</button>
-      <button class="btn-tool green-t" onclick="exportWorkersExcel()">📥 Excel</button>
-      <button class="btn-tool" id="fbToolBtn" onclick="openModal('firebaseModal')" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-color:#ffcc80;color:#92400e">🔥 หลายเครื่อง</button>
+      <button class="btn-tool" id="settingsToolBtn" onclick="openSettingsMode()" style="background:linear-gradient(135deg,#334155,#1e293b);color:#fff;border-color:#334155;font-weight:700">⚙️ ตั้งค่า</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreJSON(event)">
       <input type="file" id="buddingImportInput" accept=".json" style="display:none" onchange="importBuddingBackup(event)">
     </div>
@@ -1110,42 +1105,9 @@ body::before{
       </div>
       
       <div class="worker-items" id="workerGrid"><div class="wcard" onclick="openDetail(1)">
-      <div class="w-dot"></div>
       <div class="w-emoji">👵</div>
       <div class="w-info">
         <div class="w-name">ยายแต </div>
-        <div class="w-bal-row pos">💰 ฿290.00</div>
-      </div>
-      <span style="font-size:.7rem;color:#ccc"></span>
-    </div><div class="wcard" onclick="openDetail(2)">
-      
-      <div class="w-emoji">🧑</div>
-      <div class="w-info">
-        <div class="w-name">เขียว </div>
-        <div class="w-bal-row pos">💰 ฿0.00</div>
-      </div>
-      <span style="font-size:.7rem;color:#ccc"></span>
-    </div><div class="wcard" onclick="openDetail(3)">
-      
-      <div class="w-emoji">👵</div>
-      <div class="w-info">
-        <div class="w-name">ยายเตี้ย </div>
-        <div class="w-bal-row pos">💰 ฿0.00</div>
-      </div>
-      <span style="font-size:.7rem;color:#ccc"></span>
-    </div><div class="wcard" onclick="openDetail(4)">
-      
-      <div class="w-emoji">👵</div>
-      <div class="w-info">
-        <div class="w-name">ยายนง </div>
-        <div class="w-bal-row pos">💰 ฿0.00</div>
-      </div>
-      <span style="font-size:.7rem;color:#ccc"></span>
-    </div><div class="wcard" onclick="openDetail(5)">
-      
-      <div class="w-emoji">🧒</div>
-      <div class="w-info">
-        <div class="w-name">น้องปอ </div>
         <div class="w-bal-row pos">💰 ฿0.00</div>
       </div>
       <span style="font-size:.7rem;color:#ccc"></span>
@@ -1409,7 +1371,7 @@ body::before{
     <h2>📋 ประวัติทั้งหมด</h2><button type="button" onclick="showDuplicateDailyAttendance()" style="padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#fffbeb;cursor:pointer">🔎 ตรวจค่าแรงซ้ำ</button>
     <button type="button" id="historyExpandBtn" aria-expanded="false" aria-controls="historyPanel" onclick="toggleHistoryExpanded()" style="padding:8px 14px;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff;color:#3730a3;cursor:pointer;font-family:inherit">⛶ ขยายเต็มจอ</button>
     <div class="filter-row">
-      <select class="finput" id="filterWorker" onchange="renderGlobalHist()" style="padding:6px 11px;font-size:.78rem"><option value="">ทุกคน</option><option value="1">👵 ยายแต</option><option value="2">🧑 เขียว</option><option value="3">👵 ยายเตี้ย</option><option value="4">👵 ยายนง</option><option value="5">🧒 น้องปอ</option></select>
+      <select class="finput" id="filterWorker" onchange="renderGlobalHist()" style="padding:6px 11px;font-size:.78rem"><option value="">ทุกคน</option><option value="1">👵 ยายแต</option></select>
       <select class="finput" id="filterType" onchange="renderGlobalHist()" style="padding:6px 11px;font-size:.78rem">
         <option value="">ทุกประเภท</option>
         <option value="attendance">ค่าแรง</option><option value="piece">งานเหมา</option>
@@ -1742,6 +1704,53 @@ body::before{
 </div>
 
 <!-- MODALS -->
+<!-- v113: โหมดตั้งค่า (ผู้ดูแล) — รวมปุ่มระบบไว้ที่เดียว ต้องใส่รหัสก่อนเข้า -->
+<style>
+#settingsModal .modal{max-width:520px}
+.set-sec{font-size:.78rem;color:var(--ink3,#64748b);margin:14px 2px 6px;letter-spacing:.02em}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.set-grid{grid-template-columns:1fr}}
+.set-item{display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;border-radius:14px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-family:inherit;min-height:56px;color:#1e293b}
+.set-item:hover{border-color:#93c5fd;background:#eff6ff}
+.set-item i{font-style:normal;font-size:1.35rem;width:30px;text-align:center;flex:0 0 auto}
+.set-item b{display:block;font-size:.9rem;font-weight:600}
+.set-item small{display:block;font-size:.72rem;color:#64748b;line-height:1.3;margin-top:1px}
+.set-item.warn{border-color:#fecaca;background:#fff5f5}
+.set-note{font-size:.74rem;color:#64748b;background:#f1f5f9;border-radius:10px;padding:8px 10px;margin-top:12px}
+</style>
+<div class="modal-bg" id="settingsModal" onclick="if(event.target===this)closeModal('settingsModal')">
+  <div class="modal"><h2>⚙️ ตั้งค่า (ผู้ดูแล)</h2>
+    <div class="set-sec">💾 สำรองข้อมูล</div>
+    <div class="set-grid">
+      <button class="set-item" onclick="settingsRun(()=>backupJSON())"><i>☁️</i><span><b>Backup</b><small>เก็บไฟล์สำรองข้อมูลตอนนี้</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>manualSelectBackupFolder())"><i>📁</i><span><b>สำรองลงโฟลเดอร์คนงาน</b><small>บันทึกลงโฟลเดอร์ ปจบ / คนงาน</small></span></button>
+      <button class="set-item warn" onclick="settingsRun(()=>document.getElementById('restoreInput').click())"><i>📥</i><span><b>Restore</b><small>ดึงข้อมูลจากไฟล์สำรอง (ดูตัวอย่างก่อนทับ)</small></span></button>
+    </div>
+    <div class="set-sec">🔄 นำเข้า / ส่งออก</div>
+    <div class="set-grid">
+      <button class="set-item" onclick="settingsRun(()=>document.getElementById('buddingImportInput').click())"><i>🌱</i><span><b>นำเข้าติดตายาง</b><small>รวมข้อมูลจากระบบติดตายาง</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>downloadCSV())"><i>📤</i><span><b>Export</b><small>ส่งออกประวัติเป็นไฟล์ CSV</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>exportWorkersExcel())"><i>📊</i><span><b>Excel</b><small>ส่งออกรายชื่อและยอดคนงาน</small></span></button>
+    </div>
+    <div class="set-sec">🛠️ ระบบ</div>
+    <div class="set-grid">
+      <button class="set-item" id="fbToolBtn" onclick="settingsRun(()=>openModal('firebaseModal'))"><i>🔥</i><span><b>หลายเครื่อง</b><small>ตั้งค่าซิงค์ Firebase</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>openLedgerAudit())"><i>🧮</i><span><b>ตรวจยอด / ค่าแรงมาตรฐาน</b><small>เช็กยอดคงเหลือทุกคน</small></span></button>
+    </div>
+    <div class="set-note">ข้อมูลบันทึกอัตโนมัติทุกครั้งที่กดบันทึก ปุ่มในหน้านี้ใช้เมื่อต้องสำรอง ย้ายเครื่อง หรือแก้ระบบเท่านั้น</div>
+    <div class="modal-btns"><button class="m-cancel" onclick="closeModal('settingsModal')">ปิด</button></div>
+  </div>
+</div>
+<script>
+// v113: เปิดโหมดตั้งค่า ต้องผ่าน requirePin() ทุกครั้ง
+function openSettingsMode(){
+  requirePin('เปิดหน้าตั้งค่า (ผู้ดูแล)', function(){ openModal('settingsModal'); });
+}
+function settingsRun(fn){
+  closeModal('settingsModal');
+  setTimeout(function(){ try{ fn(); }catch(e){ console.error(e); if(typeof toast==='function') toast('❌ ทำรายการไม่สำเร็จ: '+(e&&e.message||e)); } }, 60);
+}
+</script>
 <div class="modal-bg" id="addWorkerModal" onclick="if(event.target===this)closeModal(&#39;addWorkerModal&#39;)">
   <div class="modal"><h2>➕ เพิ่มคนงาน</h2>
     <label>ชื่อ</label><input type="text" id="mwName" placeholder="ชื่อคนงาน" onkeydown="if(event.key===&#39;Enter&#39;)addWorker()">
@@ -3859,10 +3868,9 @@ function loadData() {
     }
   }
   
-  // ถ้าไม่มีข้อมูล ให้สร้างข้อมูลเริ่มต้น (ลบป้าหน้า ป้าใต้ออก)
+  // ถ้าไม่มีข้อมูล ให้สร้างข้อมูลเริ่มต้น — v114: เหลือคนตัวอย่างคนเดียว "ยายแต" (เอาเขียว / น้องปอ ออก)
   workers = [
-    { id: 1, name: 'เขียว', emoji: '🧑', dailyWage: 300, balance: 0, history: [], pending: [] },
-    { id: 2, name: 'น้องปอ', emoji: '🧒', dailyWage: 288, balance: 0, history: [], pending: [] },
+    { id: 1, name: 'ยายแต', emoji: '👵', dailyWage: 330, balance: 0, history: [], pending: [] },
     { id: 999, name: 'กิจการ', emoji: '🏪', dailyWage: 0, balance: 0, history: [], pending: [] },
   ];
   
@@ -12519,6 +12527,21 @@ window.addEventListener('load', function() {
 .pa-tag.withdraw{background:#fee2e2;color:#b91c1c}
 .pa-tag.advance{background:#fef3c7;color:#92400e}
 .pa-tag.equip{background:#ede9fe;color:#6d28d9}
+/* v115: ติ๊กที่มาของเงิน เงินร้าน / เงินแม่ */
+.pa-src{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.pa-src button{display:flex;align-items:center;gap:4px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;
+  border-radius:10px;padding:5px 8px;font-family:'Mitr',sans-serif;font-size:.72rem;cursor:pointer;min-width:74px;line-height:1.1}
+.pa-src button .bx{width:15px;height:15px;border-radius:4px;border:1.5px solid #cbd5e1;display:grid;place-items:center;font-size:.62rem;color:#fff;flex-shrink:0}
+.pa-src button.on.shop{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.pa-src button.on.shop .bx{background:#2563eb;border-color:#2563eb}
+.pa-src button.on.mom{border-color:#db2777;background:#fdf2f8;color:#be185d}
+.pa-src button.on.mom .bx{background:#db2777;border-color:#db2777}
+.pa-srcsum{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;background:#fff;border-bottom:1px solid #f3e4cb;font-size:.72rem}
+.pa-srcsum span{border-radius:999px;padding:3px 9px;font-family:'Mitr',sans-serif}
+.pa-srcsum .shop{background:#eff6ff;color:#1d4ed8}
+.pa-srcsum .mom{background:#fdf2f8;color:#be185d}
+.pa-srcsum .none{background:#f3f4f6;color:#6b7280}
+@media(max-width:420px){.pa-row{flex-wrap:wrap}.pa-src{flex-direction:row;width:100%;padding-left:53px}.pa-src button{flex:1}}
 .pa-empty{padding:30px 20px;text-align:center;color:#9ca3af;font-size:.88rem}
 .pa-foot{display:flex;gap:8px;padding:13px 16px;border-top:1px solid #eee;background:#fafafa}
 .pa-foot button{flex:1;padding:12px;border-radius:50px;border:none;cursor:pointer;
@@ -12568,6 +12591,7 @@ window.addEventListener('load', function() {
       <div><div class="k">⏱️ ล่วงหน้า</div><div class="v" id="paSumA">฿0</div></div>
       <div><div class="k">🛒 เจ้าของจ่าย</div><div class="v" id="paSumE">฿0</div></div>
     </div>
+    <div class="pa-srcsum" id="paSrcSum"></div>
     <div class="pa-list" id="paList"></div>
     <div class="pa-foot">
       <button class="pa-copy" onclick="paCopy()">📋 คัดลอกสรุป</button>
@@ -12623,7 +12647,10 @@ window.addEventListener('load', function() {
           ts: h.ts || 0,
           amount: Math.abs(Number(h.amount) || 0),
           deducted: Math.max(0, Number(h.deducted) || 0),
-          detail: h.detail || ''
+          detail: h.detail || '',
+          src: (h.moneySrc === 'shop' || h.moneySrc === 'mom') ? h.moneySrc : '',
+          wid: w.id,
+          hid: h.id
         });
       });
     });
@@ -12644,6 +12671,24 @@ window.addEventListener('load', function() {
       : '<div class="pa-av">' + esc(r.emoji) + '</div>';
   }
 
+  function srcBtn(r, val, label){
+    var on = r.src === val;
+    return '<button type="button" class="' + val + (on ? ' on' : '') + '" onclick="paSetSrc(' + JSON.stringify(String(r.wid)).replace(/"/g,'&quot;') + ',' + JSON.stringify(String(r.hid)).replace(/"/g,'&quot;') + ',\'' + val + '\')">'
+      + '<span class="bx">' + (on ? '✓' : '') + '</span>' + label + '</button>';
+  }
+
+  /* v115: ติ๊กว่าเงินออกจากไหน — เก็บเป็นป้ายในรายการเดิม ไม่เปลี่ยนยอดเงิน */
+  window.paSetSrc = function(wid, hid, val){
+    if(typeof workers === 'undefined') return;
+    var w = workers.find(function(x){ return String(x.id) === String(wid); });
+    var h = w && (w.history || []).find(function(x){ return String(x.id) === String(hid); });
+    if(!h) return;
+    if(h.moneySrc === val) delete h.moneySrc;   // กดซ้ำ = เอาติ๊กออก
+    else h.moneySrc = val;
+    if(typeof saveData === 'function') saveData();
+    paRender();
+  };
+
   /* ---- วาดป๊อปอัพ ---- */
   function paRender(){
     var rows = paCollect();
@@ -12660,6 +12705,15 @@ window.addEventListener('load', function() {
     document.getElementById('paSumW').textContent = bahtShort(sumW);
     document.getElementById('paSumA').textContent = bahtShort(sumA);
     document.getElementById('paSumE').textContent = bahtShort(sumE);
+    var sS = 0, sM = 0, sN = 0;
+    rows.forEach(function(r){ if(r.src === 'shop') sS += r.amount; else if(r.src === 'mom') sM += r.amount; else sN += r.amount; });
+    var ss = document.getElementById('paSrcSum');
+    if(ss){
+      ss.style.display = rows.length ? '' : 'none';
+      ss.innerHTML = '<span class="shop">🏪 เงินร้าน ' + baht(sS) + '</span>'
+        + '<span class="mom">👩 เงินแม่ ' + baht(sM) + '</span>'
+        + (sN > 0 ? '<span class="none">ยังไม่ติ๊ก ' + baht(sN) + '</span>' : '');
+    }
 
     var list = document.getElementById('paList');
     if(!rows.length){
@@ -12675,6 +12729,9 @@ window.addEventListener('load', function() {
           + '<div class="pa-meta">' + meta + '</div></div>'
           + '<div class="pa-amt ' + r.kind + '">' + baht(r.amount)
           + (r.deducted > 0 ? '<span class="ded">หักล่วงหน้า ' + baht(r.deducted) + '</span>' : '')
+          + '</div>'
+          + '<div class="pa-src">'
+          + srcBtn(r, 'shop', '🏪 เงินร้าน') + srcBtn(r, 'mom', '👩 เงินแม่')
           + '</div></div>';
       }).join('');
     }
@@ -12701,14 +12758,17 @@ window.addEventListener('load', function() {
   };
 
   window.paCopy = function(){
-    var rows = paCollect(), total = 0;
+    var rows = paCollect(), total = 0, cS = 0, cM = 0;
+    var SRC = { shop:' [เงินร้าน]', mom:' [เงินแม่]' };
     var lines = ['🔔 เบิกเงินวันนี้ ' + (typeof thaiDateStr === 'function' ? thaiDateStr() : '')];
     rows.forEach(function(r){
       total += r.amount;
-      lines.push('• ' + r.name + ' — ' + TAG[r.kind] + ' ' + baht(r.amount) + (hhmm(r.ts) ? ' (' + hhmm(r.ts) + ')' : ''));
+      if(r.src === 'shop') cS += r.amount; else if(r.src === 'mom') cM += r.amount;
+      lines.push('• ' + r.name + ' — ' + TAG[r.kind] + ' ' + baht(r.amount) + (SRC[r.src] || '') + (hhmm(r.ts) ? ' (' + hhmm(r.ts) + ')' : ''));
     });
     if(!rows.length) lines.push('(ยังไม่มีรายการ)');
     lines.push('รวมเงินออกจากเก๊ะ ' + baht(total));
+    if(rows.length) lines.push('🏪 เงินร้าน ' + baht(cS) + ' · 👩 เงินแม่ ' + baht(cM) + (total - cS - cM > 0.004 ? ' · ยังไม่ติ๊ก ' + baht(total - cS - cM) : ''));
     var text = lines.join('\n');
 
     function done(ok){
