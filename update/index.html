@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v116">
-<title>💰 จ่ายเงินคนงาน PRO v116</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v117">
+<title>💰 จ่ายเงินคนงาน PRO v117</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -955,7 +955,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v116 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v117 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -12317,7 +12317,47 @@ window.addEventListener('load', function() {
   meta('apple-mobile-web-app-capable','yes');
   meta('apple-mobile-web-app-status-bar-style','black');
   meta('apple-mobile-web-app-title','จ่ายเงินคนงาน');
-  try{
+  /* v117: เปิดจากเว็บ GitHub Pages = แอปมือถือ → ใช้ manifest จริง + เก็บไว้ใช้ตอนไม่มีเน็ต */
+  var IS_WEBAPP = location.protocol === 'https:' && /\.github\.io$/.test(location.hostname);
+  if(IS_WEBAPP){
+    try{
+      var lm = document.createElement('link'); lm.rel = 'manifest'; lm.href = '../manifest.webmanifest';
+      document.head.appendChild(lm);
+      var ai = document.createElement('link'); ai.rel = 'apple-touch-icon'; ai.href = '../icons/apple-touch-icon.png';
+      document.head.appendChild(ai);
+      var fi = document.createElement('link'); fi.rel = 'icon'; fi.href = '../icons/icon-192.png';
+      document.head.appendChild(fi);
+      meta('theme-color','#1a1a2e');
+      if('serviceWorker' in navigator){
+        window.addEventListener('load', function(){
+          navigator.serviceWorker.register('../sw.js', {scope:'../'}).catch(function(e){ console.warn('sw', e); });
+        });
+      }
+    }catch(e){}
+    /* ปุ่ม "📲 ติดตั้งแอป" — ขึ้นเฉพาะตอนที่มือถือพร้อมติดตั้ง และยังไม่ได้ติดตั้ง */
+    var deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', function(ev){
+      ev.preventDefault(); deferredInstall = ev;
+      if(document.getElementById('appInstallBtn')) return;
+      var b = document.createElement('button');
+      b.id = 'appInstallBtn'; b.type = 'button'; b.textContent = '📲 ติดตั้งแอปลงมือถือ';
+      b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:3000;'
+        + 'background:#f5b12e;color:#1a1a2e;border:none;border-radius:999px;padding:11px 20px;font-family:Mitr,sans-serif;'
+        + 'font-size:.95rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer';
+      b.onclick = function(){
+        if(!deferredInstall) return;
+        deferredInstall.prompt();
+        deferredInstall.userChoice.finally(function(){ deferredInstall = null; b.remove(); });
+      };
+      document.body.appendChild(b);
+      setTimeout(function(){ if(b.parentNode) b.remove(); }, 60000);
+    });
+    window.addEventListener('appinstalled', function(){
+      var b = document.getElementById('appInstallBtn'); if(b) b.remove();
+      if(typeof toast === 'function') toast('✅ ติดตั้งแอปแล้ว ดูไอคอนที่หน้าจอมือถือ');
+    });
+  }
+  if(!IS_WEBAPP) try{
     var mf = {name:'ระบบจ่ายเงินคนงาน PRO', short_name:'จ่ายเงินคนงาน', display:'standalone',
               background_color:'#f4f7fb', theme_color:'#1a1a2e', start_url:'.'};
     var l = document.createElement('link');
