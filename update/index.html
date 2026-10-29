@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v115">
-<title>💰 จ่ายเงินคนงาน PRO v115</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v116">
+<title>💰 จ่ายเงินคนงาน PRO v116</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -955,7 +955,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v115 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v116 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -5084,7 +5084,7 @@ function renderGlobalHist() {
       <td>${typeMap[h.type] || h.type}</td>
       <td style="color:${h.amount >= 0 ? 'var(--green)' : 'var(--primary)'}">${h.amount >= 0 ? '+' : ''}${(h.amount || 0).toFixed(2)}</td>
       ${deductedCell}
-      <td style="color:var(--ink);font-size:.82rem;font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.detail || ''}</td>
+      <td style="color:var(--ink);font-size:.82rem;font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.moneySrc === 'shop' ? '<span title="เงินร้าน">🏪</span> ' : h.moneySrc === 'mom' ? '<span title="เงินแม่">👩</span> ' : ''}${h.detail || ''}</td>
       <td>
         <button onclick="openEditModal(${h.wid}, ${h.id})" style="background:none;border:none;cursor:pointer;padding:0 5px">✏️</button>
         <button onclick="deleteEntry(${h.wid}, ${h.id})" style="background:none;border:none;cursor:pointer;padding:0 5px">🗑️</button>
@@ -12541,6 +12541,25 @@ window.addEventListener('load', function() {
 .pa-srcsum .shop{background:#eff6ff;color:#1d4ed8}
 .pa-srcsum .mom{background:#fdf2f8;color:#be185d}
 .pa-srcsum .none{background:#f3f4f6;color:#6b7280}
+.pa-nav{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#fff7ea;border-bottom:1px solid #f3e4cb}
+.pa-nav button{border:1.5px solid #f3d3a2;background:#fff;color:#92400e;border-radius:999px;padding:7px 11px;
+  font-family:'Mitr',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.pa-nav button:disabled{opacity:.35;cursor:default}
+.pa-pick{flex:1;position:relative;text-align:center;font-family:'Mitr',sans-serif;font-size:.86rem;font-weight:700;color:#7c4a05;
+  border:1.5px dashed #f3d3a2;border-radius:10px;padding:6px 4px;cursor:pointer;background:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.pa-pick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.pa-nav2{display:flex;gap:6px;padding:0 12px 9px;background:#fff7ea;border-bottom:1px solid #f3e4cb}
+.pa-nav2 button{flex:1;border:1.5px solid #e5e7eb;background:#fff;color:#374151;border-radius:999px;padding:7px 10px;
+  font-family:'Mitr',sans-serif;font-size:.76rem;font-weight:600;cursor:pointer}
+.pa-nav2 button.warn{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}
+.pa-nav2 button.ok{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}
+.pa-nav2 button.cur{border-color:#b45309;background:#b45309;color:#fff}
+.pa-dhead{padding:6px 16px;background:#f9fafb;border-bottom:1px solid #eee;font-family:'Mitr',sans-serif;font-size:.74rem;color:#6b7280;font-weight:600}
+.pa-toast .qs{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.pa-toast .qs button{border:1.5px solid #e5e7eb;background:#fff;border-radius:999px;padding:4px 9px;font-family:'Mitr',sans-serif;font-size:.7rem;cursor:pointer}
+.pa-toast .qs .shop{color:#1d4ed8;border-color:#bfdbfe}
+.pa-toast .qs .mom{color:#be185d;border-color:#fbcfe8}
+.pa-toast .qs .done{border:none;background:#f0fdf4;color:#15803d;font-weight:700}
 @media(max-width:420px){.pa-row{flex-wrap:wrap}.pa-src{flex-direction:row;width:100%;padding-left:53px}.pa-src button{flex:1}}
 .pa-empty{padding:30px 20px;text-align:center;color:#9ca3af;font-size:.88rem}
 .pa-foot{display:flex;gap:8px;padding:13px 16px;border-top:1px solid #eee;background:#fafafa}
@@ -12577,13 +12596,23 @@ window.addEventListener('load', function() {
     <div class="pa-head">
       <div class="bell">🔔</div>
       <div>
-        <h3>เบิกเงินวันนี้</h3>
+        <h3 id="paTitle">เบิกเงินวันนี้</h3>
         <div class="sub" id="paDate">—</div>
       </div>
       <button class="pa-x" onclick="paClose()" aria-label="ปิด">✕</button>
     </div>
+    <div class="pa-nav">
+      <button type="button" onclick="paShift(-1)">◀ วันก่อน</button>
+      <label class="pa-pick" title="แตะเพื่อเลือกวัน">📅 <span id="paNavLbl">วันนี้</span>
+        <input type="date" id="paDateInp" onchange="paPick(this.value)"></label>
+      <button type="button" id="paNextBtn" onclick="paShift(1)">วันถัดไป ▶</button>
+    </div>
+    <div class="pa-nav2">
+      <button type="button" id="paTodayBtn" onclick="paGoToday()">📆 วันนี้</button>
+      <button type="button" id="paUntagBtn" onclick="paUntagMode()">⚠️ ยังไม่ติ๊ก 0</button>
+    </div>
     <div class="pa-total">
-      <span class="k">💵 เงินออกจากเก๊ะวันนี้</span>
+      <span class="k" id="paTotalK">💵 เงินออกจากเก๊ะวันนี้</span>
       <span class="v" id="paTotal">฿0.00</span>
     </div>
     <div class="pa-mini">
@@ -12624,15 +12653,39 @@ window.addEventListener('load', function() {
   }
 
   /* ---- รวบรวมรายการเงินออกของวันนี้ (นิยามเดียวกับการ์ด "เงินออกจากเก๊ะวันนี้") ---- */
-  function paCollect(){
+  /* v116: ดูย้อนหลังได้ทุกวัน + โหมด "ยังไม่ติ๊ก" */
+  var UNTAG_DAYS = 60;          // โหมดยังไม่ติ๊ก ดูย้อนหลัง 60 วัน (เก่ากว่านั้นเลือกวันเอาเอง)
+  var viewDate = null;          // null = วันนี้
+  var viewMode = 'day';         // 'day' | 'untag'
+  var untagKeep = {};           // รายการที่เพิ่งติ๊กในโหมดยังไม่ติ๊ก ให้ยังเห็นอยู่ (กดแก้ได้)
+
+  function tds(d){ return (typeof thaiDateStr === 'function') ? thaiDateStr(d || new Date()) : ''; }
+  function dayStart(d){ var x = new Date(d); x.setHours(0,0,0,0); return x; }
+  function entryDay(h){
+    var d = (typeof parseThaiDateStr === 'function') ? parseThaiDateStr(h.date) : null;
+    if(!d && h.ts) d = new Date(h.ts);
+    return d ? dayStart(d) : null;
+  }
+  function isTodayView(){ return !viewDate || tds(viewDate) === tds(); }
+
+  function paCollect(dateStr){
     var out = [];
     if(typeof workers === 'undefined' || !Array.isArray(workers)) return out;
     var today = (typeof thaiDateStr === 'function') ? thaiDateStr() : '';
     var oid = ownerId();
+    var untag = dateStr === '*untag';
+    var want = untag ? null : (dateStr || today);
+    var minDay = dayStart(Date.now() - UNTAG_DAYS * 86400000);
 
     workers.forEach(function(w){
       (w.history || []).forEach(function(h){
-        if(!h || h.date !== today) return;
+        if(!h) return;
+        if(untag){
+          var keep = untagKeep[String(w.id) + '|' + String(h.id)];
+          if((h.moneySrc === 'shop' || h.moneySrc === 'mom') && !keep) return;
+          var ed = entryDay(h);
+          if(!ed || ed < minDay) return;
+        } else if(h.date !== want) return;
         var kind = null;
         if(h.type === 'withdraw') kind = 'withdraw';
         else if(h.type === 'advance') kind = 'advance';
@@ -12649,6 +12702,7 @@ window.addEventListener('load', function() {
           deducted: Math.max(0, Number(h.deducted) || 0),
           detail: h.detail || '',
           src: (h.moneySrc === 'shop' || h.moneySrc === 'mom') ? h.moneySrc : '',
+          date: h.date || '',
           wid: w.id,
           hid: h.id
         });
@@ -12656,6 +12710,12 @@ window.addEventListener('load', function() {
     });
     out.sort(payrollNewestFirst);
     return out;
+  }
+  function viewRows(){
+    return viewMode === 'untag' ? paCollect('*untag') : paCollect(isTodayView() ? null : tds(viewDate));
+  }
+  function untagCount(){
+    var n = 0; paCollect('*untag').forEach(function(r){ if(!r.src) n++; }); return n;
   }
 
   function sigOf(rows){
@@ -12683,15 +12743,17 @@ window.addEventListener('load', function() {
     var w = workers.find(function(x){ return String(x.id) === String(wid); });
     var h = w && (w.history || []).find(function(x){ return String(x.id) === String(hid); });
     if(!h) return;
-    if(h.moneySrc === val) delete h.moneySrc;   // กดซ้ำ = เอาติ๊กออก
-    else h.moneySrc = val;
+    if(h.moneySrc === val){ delete h.moneySrc; delete h.moneySrcAt; }   // กดซ้ำ = เอาติ๊กออก
+    else { h.moneySrc = val; h.moneySrcAt = Date.now(); }               // v116: จำเวลาที่ติ๊กไว้ด้วย
+    if(viewMode === 'untag') untagKeep[String(w.id) + '|' + String(h.id)] = 1;
     if(typeof saveData === 'function') saveData();
+    if(typeof renderAll === 'function') renderAll();
     paRender();
   };
 
   /* ---- วาดป๊อปอัพ ---- */
   function paRender(){
-    var rows = paCollect();
+    var rows = viewRows();
     var sumW = 0, sumA = 0, sumE = 0;
     rows.forEach(function(r){
       if(r.kind === 'withdraw') sumW += r.amount;
@@ -12700,7 +12762,26 @@ window.addEventListener('load', function() {
     });
 
     var d = document.getElementById('paDate');
-    if(d) d.textContent = (typeof thaiDateStr === 'function' ? thaiDateStr() : '') + ' · ' + rows.length + ' รายการ';
+    var vToday = isTodayView(), vLbl = vToday ? tds() : tds(viewDate);
+    if(viewMode === 'untag'){
+      if(d) d.textContent = 'ย้อนหลัง ' + UNTAG_DAYS + ' วัน · ' + rows.length + ' รายการ';
+      setTxt('paTitle', 'ยังไม่ได้ติ๊กว่าเงินใคร');
+      setTxt('paTotalK', '💵 รวมรายการในหน้านี้');
+    } else {
+      if(d) d.textContent = vLbl + ' · ' + rows.length + ' รายการ';
+      setTxt('paTitle', vToday ? 'เบิกเงินวันนี้' : 'เบิกเงินย้อนหลัง');
+      setTxt('paTotalK', vToday ? '💵 เงินออกจากเก๊ะวันนี้' : '💵 เงินออกจากเก๊ะวันที่ ' + vLbl);
+    }
+    setTxt('paNavLbl', viewMode === 'untag' ? 'เลือกวัน' : (vToday ? 'วันนี้ · ' + vLbl : vLbl));
+    var nb = document.getElementById('paNextBtn'); if(nb) nb.disabled = (viewMode !== 'untag' && vToday);
+    var tb = document.getElementById('paTodayBtn'); if(tb) tb.className = (viewMode === 'day' && vToday) ? 'cur' : '';
+    var nU = untagCount(), ub = document.getElementById('paUntagBtn');
+    if(ub){
+      ub.textContent = viewMode === 'untag' ? '✅ เสร็จแล้ว กลับ' : (nU ? '⚠️ ยังไม่ติ๊ก ' + nU + ' รายการ' : '✅ ติ๊กครบแล้ว');
+      ub.className = viewMode === 'untag' ? 'cur' : (nU ? 'warn' : 'ok');
+    }
+    var inp = document.getElementById('paDateInp');
+    if(inp){ var vd = viewDate || new Date(); inp.value = isoOf(vd); inp.max = isoOf(new Date()); }
     document.getElementById('paTotal').textContent = baht(sumW + sumA + sumE);
     document.getElementById('paSumW').textContent = bahtShort(sumW);
     document.getElementById('paSumA').textContent = bahtShort(sumA);
@@ -12717,13 +12798,18 @@ window.addEventListener('load', function() {
 
     var list = document.getElementById('paList');
     if(!rows.length){
-      list.innerHTML = '<div class="pa-empty">📭 วันนี้ยังไม่มีใครเบิกเงิน</div>';
+      list.innerHTML = viewMode === 'untag'
+        ? '<div class="pa-empty">🎉 ติ๊กครบทุกรายการแล้ว</div>'
+        : '<div class="pa-empty">📭 ' + (vToday ? 'วันนี้' : 'วันนี้ (' + vLbl + ')') + ' ไม่มีใครเบิกเงิน</div>';
     } else {
+      var lastD = null;
       list.innerHTML = rows.map(function(r){
+        var dh = '';
+        if(viewMode === 'untag' && r.date !== lastD){ lastD = r.date; dh = '<div class="pa-dhead">📅 ' + esc(r.date) + '</div>'; }
         var meta = '<span class="pa-tag ' + r.kind + '">' + TAG[r.kind] + '</span>'
                  + (hhmm(r.ts) ? hhmm(r.ts) : '')
                  + (r.detail ? ' · ' + esc(r.detail) : '');
-        return '<div class="pa-row">'
+        return dh + '<div class="pa-row">'
           + avatarHtml(r)
           + '<div class="pa-mid"><div class="pa-name">' + esc(r.name) + '</div>'
           + '<div class="pa-meta">' + meta + '</div></div>'
@@ -12737,6 +12823,27 @@ window.addEventListener('load', function() {
     }
     return rows;
   }
+  function setTxt(id, t){ var e = document.getElementById(id); if(e) e.textContent = t; }
+  function isoOf(d){ return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+
+  /* v116: เลื่อนวัน / เลือกวัน / โหมดยังไม่ติ๊ก */
+  window.paShift = function(n){
+    if(viewMode === 'untag'){ viewMode = 'day'; untagKeep = {}; }
+    var d = dayStart(viewDate || new Date()); d.setDate(d.getDate() + n);
+    if(d > dayStart(new Date())) d = dayStart(new Date());
+    viewDate = d; paRender();
+  };
+  window.paPick = function(v){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); if(!m) return;
+    var d = new Date(+m[1], +m[2]-1, +m[3]);
+    if(d > dayStart(new Date())) d = dayStart(new Date());
+    viewMode = 'day'; untagKeep = {}; viewDate = d; paRender();
+  };
+  window.paGoToday = function(){ viewMode = 'day'; untagKeep = {}; viewDate = null; paRender(); };
+  window.paUntagMode = function(){
+    if(viewMode === 'untag'){ window.paGoToday(); return; }
+    viewMode = 'untag'; untagKeep = {}; paRender();
+  };
 
   function paBadge(){
     var n = paCollect().length;
@@ -12747,6 +12854,7 @@ window.addEventListener('load', function() {
   }
 
   window.paOpen = function(){
+    viewMode = 'day'; viewDate = null; untagKeep = {};
     var rows = paRender();
     document.getElementById('payAlertModal').classList.add('on');
     try{ localStorage.setItem(SEEN_KEY, sigOf(rows)); }catch(e){}
@@ -12758,16 +12866,18 @@ window.addEventListener('load', function() {
   };
 
   window.paCopy = function(){
-    var rows = paCollect(), total = 0, cS = 0, cM = 0;
+    var rows = viewRows(), total = 0, cS = 0, cM = 0;
     var SRC = { shop:' [เงินร้าน]', mom:' [เงินแม่]' };
-    var lines = ['🔔 เบิกเงินวันนี้ ' + (typeof thaiDateStr === 'function' ? thaiDateStr() : '')];
+    var head = viewMode === 'untag' ? '⚠️ รายการที่ยังไม่ติ๊กว่าเงินใคร'
+      : (isTodayView() ? '🔔 เบิกเงินวันนี้ ' + tds() : '🔔 เบิกเงินวันที่ ' + tds(viewDate));
+    var lines = [head];
     rows.forEach(function(r){
       total += r.amount;
       if(r.src === 'shop') cS += r.amount; else if(r.src === 'mom') cM += r.amount;
-      lines.push('• ' + r.name + ' — ' + TAG[r.kind] + ' ' + baht(r.amount) + (SRC[r.src] || '') + (hhmm(r.ts) ? ' (' + hhmm(r.ts) + ')' : ''));
+      lines.push('• ' + (viewMode === 'untag' ? r.date + ' ' : '') + r.name + ' — ' + TAG[r.kind] + ' ' + baht(r.amount) + (SRC[r.src] || '') + (hhmm(r.ts) ? ' (' + hhmm(r.ts) + ')' : ''));
     });
     if(!rows.length) lines.push('(ยังไม่มีรายการ)');
-    lines.push('รวมเงินออกจากเก๊ะ ' + baht(total));
+    lines.push('รวมเงินออก ' + baht(total));
     if(rows.length) lines.push('🏪 เงินร้าน ' + baht(cS) + ' · 👩 เงินแม่ ' + baht(cM) + (total - cS - cM > 0.004 ? ' · ยังไม่ติ๊ก ' + baht(total - cS - cM) : ''));
     var text = lines.join('\n');
 
@@ -12796,8 +12906,17 @@ window.addEventListener('load', function() {
     el.innerHTML = avatarHtml(r)
       + '<div class="t"><b>' + esc(r.name) + ' ' + TAG[r.kind] + ' ' + baht(r.amount) + '</b>'
       + '<span>' + (hhmm(r.ts) || 'เมื่อสักครู่') + (r.detail ? ' · ' + esc(r.detail) : '') + '</span></div>'
+      + '<div class="qs"><button class="shop">🏪 เงินร้าน</button><button class="mom">👩 เงินแม่</button></div>'
       + '<button class="go">ดู</button>';
     el.querySelector('.go').addEventListener('click', function(){ window.paOpen(); });
+    /* v116: ติ๊กได้ทันทีจากการ์ดที่เด้ง */
+    ['shop','mom'].forEach(function(v){
+      el.querySelector('.qs .' + v).addEventListener('click', function(){
+        window.paSetSrc(r.wid, r.hid, v);
+        el.querySelector('.qs').innerHTML = '<button class="done">✓ ' + (v === 'shop' ? 'เงินร้าน' : 'เงินแม่') + '</button>';
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 1500);
+      });
+    });
     wrap.appendChild(el);
     setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 9000);
   }
