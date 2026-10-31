@@ -1,7 +1,7 @@
 /* แอปมือถือ จ่ายเงินคนงาน — เก็บตัวโปรแกรมไว้ในเครื่อง ใช้ได้ตอนไม่มีเน็ต
    ตัวโปรแกรม: ดึงของใหม่จากเน็ตก่อน (ได้อัปเดตทันที) ถ้าไม่มีเน็ตใช้ตัวที่เก็บไว้
    ไม่ยุ่งกับการซิงก์ Firebase (ข้อมูลคนงานไม่ผ่านไฟล์นี้) */
-var CACHE = 'payroll-app-v1';
+var CACHE = 'payroll-app-v2';
 var CORE = ['./update/', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 var CDN = /^https:\/\/(www\.gstatic\.com\/firebasejs|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
 
@@ -21,11 +21,17 @@ self.addEventListener('fetch', function(e){
 
   // หน้าโปรแกรม: เน็ตก่อน แล้วเก็บไว้ · ไม่มีเน็ต → ตัวที่เก็บไว้
   if(req.mode === 'navigate' || (same && /\/update\/(index\.html)?$/.test(url.pathname))){
-    e.respondWith(fetch(req).then(function(res){
+    // v118: เน็ตช้า/สัญญาณอ่อน รอไม่เกิน 4 วิ แล้วเปิดตัวที่เก็บไว้ในเครื่องเลย (เดิมรอจนโหลดเสร็จ หน้าจอค้าง)
+    var netP = fetch(req).then(function(res){
       if(res.ok){ var cp = res.clone(); caches.open(CACHE).then(function(c){ c.put('./update/', cp); }); }
       return res;
-    }).catch(function(){
-      return caches.match('./update/').then(function(r){ return r || caches.match(req); });
+    });
+    var cached = function(){ return caches.match('./update/').then(function(r){ return r || caches.match(req); }); };
+    e.respondWith(new Promise(function(resolve){
+      var done = false;
+      var t = setTimeout(function(){ cached().then(function(r){ if(!done && r){ done = true; resolve(r); } }); }, 4000);
+      netP.then(function(res){ if(!done){ done = true; clearTimeout(t); resolve(res); } })
+          .catch(function(){ cached().then(function(r){ if(!done){ done = true; clearTimeout(t); resolve(r || Response.error()); } }); });
     }));
     return;
   }
