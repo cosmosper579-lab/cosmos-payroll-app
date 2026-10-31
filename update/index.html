@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v118">
-<title>💰 จ่ายเงินคนงาน PRO v118</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v119">
+<title>💰 จ่ายเงินคนงาน PRO v119</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -955,7 +955,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v118 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v119 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -13915,7 +13915,8 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible,input:focus-visibl
     function filter() {
       const q = inp.value.trim().toLowerCase(); st.q = inp.value;
       let n = 0;
-      labels().forEach(l => { const hit = !q || nameOf(l).toLowerCase().includes(q); l.style.display = hit ? '' : 'none'; if (hit) n++; });
+      // v119: ชื่อคนงานมีสไตล์ display:flex!important ทับ ทำให้ค้นหาแล้วไม่ซ่อน → ซ่อนแบบ important
+      labels().forEach(l => { const hit = !q || nameOf(l).toLowerCase().includes(q); if (hit) l.style.removeProperty('display'); else l.style.setProperty('display', 'none', 'important'); if (hit) n++; });
       empty.style.display = n ? 'none' : 'block';
     }
     function setOpen(v) {
