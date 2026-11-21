@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v119">
-<title>💰 จ่ายเงินคนงาน PRO v119</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v123">
+<title>💰 จ่ายเงินคนงาน PRO v123</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -137,6 +137,17 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-
 .dash-sub{font-size:.74rem;color:var(--ink3);margin-top:2px}
 .dash-controls{display:flex;gap:6px;flex-wrap:wrap}
 .dash-select,.dash-input{padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:'Sarabun';font-size:.8rem;color:var(--ink);outline:none}
+/* v120: ค้นหาตามช่วงวันที่ (ตั้งแต่…ถึง…) ในแดชบอร์ดงานเหมา */
+.dash-range-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#eef4ff;border:1.5px solid #c9d8ff;border-radius:12px;padding:9px 10px;margin-bottom:10px}
+.dash-range-row label{font-family:'Mitr';font-size:.82rem;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.dash-range-row .dash-input{font-size:.9rem;padding:8px 10px;background:#fff}
+.dash-range-presets{display:flex;gap:6px;flex-wrap:wrap}
+.dash-range-presets button{border:1.5px solid #c9d8ff;background:#fff;color:#2b4fb3;border-radius:999px;padding:6px 12px;font-family:'Sarabun';font-size:.8rem;cursor:pointer}
+.dash-range-presets button:hover{background:#2b4fb3;color:#fff}
+.dash-range-info{flex-basis:100%;font-size:.78rem;color:#2b4fb3}
+.dash-range-info.err{color:#c0392b;font-weight:600}
+.dash-range-btn{border:1.5px solid #2b4fb3;background:#2b4fb3;color:#fff;border-radius:10px;padding:7px 12px;font-family:'Sarabun';font-size:.8rem;cursor:pointer}
+.dash-range-btn.on{background:#fff;color:#2b4fb3}
 .dash-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
 .dash-mini{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:8px;text-align:center}
 .dash-mini .k{font-size:.7rem;color:var(--ink3);margin-bottom:2px}
@@ -955,7 +966,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v119 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v123 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1565,9 +1576,21 @@ body::before{
             <option value="month" selected>รายเดือน</option>
             <option value="year">รายปี</option>
             <option value="all">ทั้งหมด</option>
+            <option value="range">📅 เลือกช่วงวันที่</option>
           </select>
           <input id="jobDashRefDate" class="dash-input" type="date" onchange="renderJobDashboard()">
+          <button type="button" id="jobDashRangeBtn" class="dash-range-btn" onclick="toggleJobDashRange()">📅 ค้นตามช่วงวันที่</button>
         </div>
+      </div>
+      <div id="jobDashRangeRow" class="dash-range-row" style="display:none">
+        <label>ตั้งแต่ <input id="jobDashFrom" class="dash-input" type="date" onchange="renderJobDashboard()"></label>
+        <label>ถึง <input id="jobDashTo" class="dash-input" type="date" onchange="renderJobDashboard()"></label>
+        <div class="dash-range-presets">
+          <button type="button" onclick="setJobDashPreset('thisMonth')">เดือนนี้</button>
+          <button type="button" onclick="setJobDashPreset('last3')">3 เดือนล่าสุด</button>
+          <button type="button" onclick="setJobDashPreset('ytd')">ตั้งแต่ต้นปี</button>
+        </div>
+        <div id="jobDashRangeInfo" class="dash-range-info"></div>
       </div>
       <div class="dash-mini-grid">
         <div class="dash-mini"><div class="k">ประเภทงานที่ทำ</div><div class="v" id="jobDashTypes">0</div></div>
@@ -3451,6 +3474,36 @@ function filterWorkerList() {
 
 let _hdrDropIdx = -1;
 
+// v121: รวมงาน "ติดตา" ทุกแบบเป็นกลุ่มเดียว — ติดตายาง, ติดตา รอบ1, ติดตา รอบ2, ติด
+// พิมพ์แค่ "ติด" ก็เห็นยอดรวมของติดตายางทั้งหมดทันที ไม่ต้องกดดูทีละแบบ
+const BUDDING_GROUP = '🌱 ติดตายาง (รวมทุกรอบ)';
+function isBuddingType(name) {
+  const n = String(name || '').trim();
+  return n === 'ติด' || n.startsWith('ติดตา');
+}
+// ประเภทย่อยของกลุ่มติดตา: r1 = รอบ1 (แจ้งจำนวนที่ติด), r2 = รอบ2 (ตรวจต้นรอด), one = ติดตายาง/ติด แบบจ่ายครั้งเดียว
+function buddingKind(name) {
+  const n = String(name || '').replace(/\s+/g, '');
+  if (/รอบ\s*2|รอบที่2/.test(n)) return 'r2';
+  if (/รอบ\s*1|รอบที่1/.test(n)) return 'r1';
+  return 'one';
+}
+// คำค้นนี้ควรโชว์กลุ่มติดตาไหม: พิมพ์ส่วนหนึ่งของคำว่า "ติดตายาง" หรือคำค้นตรงกับงานติดตาแบบใดแบบหนึ่ง
+function termHitsBudding(term, names) {
+  const t = String(term || '').toLowerCase().trim();
+  if (!t) return false;
+  if ('ติดตายาง'.includes(t) || BUDDING_GROUP.toLowerCase().includes(t)) return true;
+  return (names || []).some(n => isBuddingType(n) && n.toLowerCase().includes(t));
+}
+// ยุบชื่องานติดตาทุกแบบในรายการผลค้นหา ให้เหลือแถวรวมแถวเดียวไว้บนสุด
+function groupJobMatches(matches, term) {
+  const all = getAllJobTypeNames();
+  const hasBudding = all.some(isBuddingType);
+  const rest = (matches || []).filter(n => !isBuddingType(n));
+  if (hasBudding && termHitsBudding(term, all)) return [BUDDING_GROUP, ...rest];
+  return rest;
+}
+
 // รวมชื่อประเภทงานเหมาทั้งหมดที่ค้นหาได้ — ทั้งประเภทตายตัว (กรอกถุง, ถอนยาง ฯลฯ), ประเภทที่ผู้ใช้เพิ่มเอง,
 // และชื่อที่เคยพิมพ์บันทึกไว้จริงในประวัติ (เผื่อพิมพ์ชื่อเฉพาะที่ไม่อยู่ใน list ตายตัว)
 function getAllJobTypeNames() {
@@ -3474,7 +3527,7 @@ function hdrDropRender(term) {
   const matched = t
     ? pool.filter(w => (w.name||'').toLowerCase().includes(t))
     : pool;
-  const jobMatched = t ? getAllJobTypeNames().filter(n => n.toLowerCase().includes(t)) : [];
+  const jobMatched = t ? groupJobMatches(getAllJobTypeNames().filter(n => n.toLowerCase().includes(t)), t) : [];
 
   _hdrDropIdx = -1;
 
@@ -3495,8 +3548,8 @@ function hdrDropRender(term) {
     html += `<div class="hdr-drop-section">📦 ประเภทงานเหมา — พิมพ์แล้วกดดูยอดรวม</div>`;
     html += jobMatched.map(name => `<div class="hdr-drop-item hdr-drop-job"
         onmousedown="hdrDropSelectJob('${encodeURIComponent(name)}')">
-        <span class="hdr-drop-emoji">📦</span>
-        <span class="hdr-drop-name">${hi(name)}</span>
+        <span class="hdr-drop-emoji">${name === BUDDING_GROUP ? '🌱' : '📦'}</span>
+        <span class="hdr-drop-name">${name === BUDDING_GROUP ? '<b>ติดตายาง</b> <span style="font-size:.8em;color:var(--ink3)">รวม รอบ1 + รอบ2 + ติดตายาง</span>' : hi(name)}</span>
         <span class="hdr-drop-bal" style="color:var(--ink3);font-weight:400">ดูยอดรวม ›</span>
       </div>`).join('');
   }
@@ -3537,7 +3590,7 @@ function hdrDropSelectJob(encodedName) {
 function openJobTypeSearchModal(name) {
   window.__jtsJobName = name;
   const titleEl = document.getElementById('jtsTitle');
-  if (titleEl) titleEl.textContent = '📦 ' + name + ' — ทำไปเท่าไหร่แล้ว';
+  if (titleEl) titleEl.textContent = name === BUDDING_GROUP ? '🌱 ติดตายาง (รวมทุกรอบ) — ทำไปเท่าไหร่แล้ว' : '📦 ' + name + ' — ทำไปเท่าไหร่แล้ว';
   const viewEl = document.getElementById('jtsView');
   const refEl = document.getElementById('jtsRefDate');
   const startEl = document.getElementById('jtsStartDate');
@@ -3600,6 +3653,8 @@ function renderJtsModal() {
   }
   const labelEl = document.getElementById('jtsRangeLabel');
   if (labelEl) labelEl.textContent = rangeLabel;
+
+  if (name === BUDDING_GROUP) { renderJtsBuddingGroup(start, end); return; }
 
   let totalQty = 0, totalRounds = 0, totalCount = 0, totalAmount = 0;
   const byWorker = {};
@@ -3675,6 +3730,84 @@ function renderJtsModal() {
           </div>
         </div>`).join('');
     }
+  }
+}
+
+// v121: หน้าสรุปกลุ่ม "ติดตายาง (รวมทุกรอบ)"
+// ต้นที่ติดแล้ว = รอบ1 + ติดตายาง/ติด (จ่ายครั้งเดียว) — ไม่บวกรอบ2 เพราะรอบ2 คือการตรวจต้นเดิมที่รอด (บวกจะนับซ้ำ)
+// ยอดเงินรวม = เงินของทุกแบบรวมกัน (รอบ1 + รอบ2 + ติดตายาง/ติด)
+function renderJtsBuddingGroup(start, end) {
+  const money = n => '฿' + Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const byType = {};
+  const byWorker = {};
+  const tot = { r1: 0, r2: 0, one: 0, amount: 0, count: 0 };
+  (workers || []).filter(w => w.id != OWNER_ID).forEach(w => {
+    (w.history || []).forEach(h => {
+      if (h.type !== 'piece') return;
+      const ts = Number(h.ts || 0);
+      if (!ts || ts < start.getTime() || ts > end.getTime()) return;
+      const { workType, qty, isRound, realQty } = getPieceInfo(h);
+      if (!isBuddingType(workType)) return;
+      const q = isRound ? Number(realQty || 0) : Number(qty || 0);
+      const amount = Number(h.amount || 0);
+      const kind = buddingKind(workType);
+      tot[kind] += q; tot.amount += amount; tot.count += 1;
+      if (!byType[workType]) byType[workType] = { kind, qty: 0, amount: 0, count: 0 };
+      byType[workType].qty += q; byType[workType].amount += amount; byType[workType].count += 1;
+      if (!byWorker[w.id]) byWorker[w.id] = { id: w.id, name: w.name, emoji: w.emoji || '👤', r1: 0, r2: 0, one: 0, qty: 0, rounds: 0, amount: 0, count: 0, entries: [] };
+      const bw = byWorker[w.id];
+      bw[kind] += q; bw.amount += amount; bw.count += 1;
+      bw.qty = bw.r1 + bw.one;
+      bw.entries.push({ id: h.id, ts: h.ts, date: h.date, qty, amount, realQty, detail: h.detail || '' });
+    });
+  });
+  const planted = tot.r1 + tot.one;
+  window.__jtsRow = { qty: planted, rounds: 0, amount: tot.amount, count: tot.count, byWorker };
+
+  const sumEl = document.getElementById('jtsSummary');
+  if (sumEl) {
+    if (!tot.count) {
+      sumEl.innerHTML = 'ยังไม่มีรายการติดตายางในช่วงที่เลือก';
+    } else {
+      const kindLabel = { r1: 'แจ้งจำนวนที่ติด', r2: 'ตรวจต้นรอด', one: 'จ่ายครั้งเดียว' };
+      const typeRows = Object.keys(byType).sort((a, b) => byType[b].amount - byType[a].amount).map(k => {
+        const r = byType[k];
+        return `<tr><td style="text-align:left;padding:4px 6px">${jdEscHtml(k)} <span style="color:var(--ink3);font-weight:400;font-size:.72rem">(${kindLabel[r.kind]})</span></td>`
+          + `<td style="text-align:right;padding:4px 6px">${formatCalcNumber(r.qty)} ต้น</td>`
+          + `<td style="text-align:right;padding:4px 6px">${r.count} ครั้ง</td>`
+          + `<td style="text-align:right;padding:4px 6px">${money(r.amount)}</td></tr>`;
+      }).join('');
+      sumEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+          <div style="grid-column:1/-1;background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1.5px solid #34d399;border-radius:14px;padding:12px 14px">
+            <div style="font-size:.76rem;color:#065f46;font-weight:700">🌱 ติดตาไปแล้วทั้งหมด</div>
+            <div style="font-size:2rem;line-height:1.15;font-weight:800;color:#047857;margin:3px 0">${formatCalcNumber(planted)} <span style="font-size:1rem">ต้น</span></div>
+            <div style="font-size:.72rem;color:#065f46;font-weight:400">รอบ1 ${formatCalcNumber(tot.r1)} + ติดตายาง ${formatCalcNumber(tot.one)}</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:8px 10px"><div style="font-size:.68rem;color:var(--ink3);font-weight:400">✅ รอบ2 ตรวจแล้ว รอด</div><b>${formatCalcNumber(tot.r2)} ต้น</b></div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:8px 10px"><div style="font-size:.68rem;color:var(--ink3);font-weight:400">💰 ยอดเงินรวมทุกรอบ</div><b>${money(tot.amount)}</b></div>
+        </div>
+        <table style="width:100%;margin-top:10px;font-size:.78rem;font-weight:600;border-collapse:collapse;color:var(--ink2)">${typeRows}
+          <tr style="border-top:1.5px solid var(--border)"><td style="text-align:left;padding:5px 6px">รวม</td><td></td><td style="text-align:right;padding:5px 6px">${tot.count} ครั้ง</td><td style="text-align:right;padding:5px 6px">${money(tot.amount)}</td></tr>
+        </table>
+        <div style="font-size:.7rem;color:var(--ink3);font-weight:400;margin-top:6px">ℹ️ จำนวนต้นไม่บวกรอบ2 เพราะรอบ2 คือการตรวจต้นเดิมว่ารอดกี่ต้น (บวกจะนับซ้ำ) แต่ยอดเงินรวมทุกรอบแล้ว</div>`;
+    }
+  }
+
+  const listEl = document.getElementById('jtsList');
+  if (listEl) {
+    const arr = Object.values(byWorker).sort((a, b) => b.amount - a.amount);
+    listEl.innerHTML = !arr.length ? '<div class="dash-empty">ยังไม่มีข้อมูล</div>' : arr.map(w => `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer" onclick="openJtsWorkerEntries(${w.id})">
+        <div style="font-weight:600">${w.emoji} ${w.name}</div>
+        <div style="text-align:right;font-size:.82rem;color:var(--ink2);display:flex;align-items:center;gap:8px">
+          <div>
+            <div style="font-family:'Mitr';font-weight:700;color:var(--primary)">ติด ${formatCalcNumber(w.r1 + w.one)} ต้น${w.r2 ? ` · รอด ${formatCalcNumber(w.r2)}` : ''} · ${w.count} ครั้ง</div>
+            <div>${money(w.amount)}</div>
+          </div>
+          <span style="font-size:1rem;color:var(--ink3)">✏️</span>
+        </div>
+      </div>`).join('');
   }
 }
 
@@ -4531,7 +4664,7 @@ function renderGrid() {
 
   // พิมพ์ชื่อประเภทงานเหมา (เช่น "กรอกถุง") ในช่องค้นหาคนงานนี้ก็หาเจอด้วย —
   // เพราะช่องนี้คือช่องที่คนใช้งานจริงเห็นเด่นที่สุด (ไม่ใช่ช่องเล็กๆ บนหัวเว็บ)
-  const jobMatches = searchTerm ? getAllJobTypeNames().filter(n => n.toLowerCase().includes(searchTerm)) : [];
+  const jobMatches = searchTerm ? groupJobMatches(getAllJobTypeNames().filter(n => n.toLowerCase().includes(searchTerm)), searchTerm) : [];
   const jobCardsHtml = jobMatches.length ? (
     `<div style="padding:8px 13px 4px;font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.03em">📦 ประเภทงานเหมา — แตะเพื่อดูยอดรวม</div>`
     + jobMatches.map(name => `
@@ -5551,11 +5684,32 @@ function renderJobDashboard() {
   const view = viewEl.value || 'month';
   const widFilter = workerEl ? workerEl.value : '';
 
+  // v120: โหมด "เลือกช่วงวันที่" — แสดงแถวตั้งแต่/ถึง และซ่อนช่องวันที่อ้างอิงเดิม
+  const rangeRow = document.getElementById('jobDashRangeRow');
+  const rangeBtn = document.getElementById('jobDashRangeBtn');
+  const isRange = view === 'range';
+  if (rangeRow) rangeRow.style.display = isRange ? '' : 'none';
+  if (rangeBtn) { rangeBtn.classList.toggle('on', isRange); rangeBtn.textContent = isRange ? '✕ ปิดช่วงวันที่' : '📅 ค้นตามช่วงวันที่'; }
+  refEl.style.display = (isRange || view === 'all') ? 'none' : '';
+
   let start, end, rangeLabel;
   if (view === 'all') {
     start = new Date(0);
     end = new Date(8640000000000000);
     rangeLabel = 'ทั้งหมด';
+  } else if (isRange) {
+    const r = getJobDashCustomRange();
+    start = r.start;
+    end = r.end;
+    const days = Math.round((startOfDay(end) - startOfDay(start)) / 86400000) + 1;
+    rangeLabel = 'ช่วง ' + thaiDateStr(start) + ' ถึง ' + thaiDateStr(end) + ' (' + days + ' วัน)';
+    const infoEl = document.getElementById('jobDashRangeInfo');
+    if (infoEl) {
+      infoEl.className = 'dash-range-info' + (r.swapped ? ' err' : '');
+      infoEl.textContent = r.swapped
+        ? '⚠️ วันที่ "ตั้งแต่" อยู่หลัง "ถึง" ระบบสลับให้แล้ว: ' + thaiDateStr(start) + ' ถึง ' + thaiDateStr(end)
+        : '📆 แสดงยอดตั้งแต่ ' + thaiDateStr(start) + ' ถึง ' + thaiDateStr(end) + ' รวม ' + days + ' วัน (นับทั้งวันแรกและวันสุดท้าย)';
+    }
   } else {
     const r = getRangeByView(view, refEl.value);
     start = r.start;
@@ -5609,6 +5763,22 @@ function renderJobDashboard() {
     });
   });
 
+  // v121: ยุบงานติดตาทุกแบบ (ติดตายาง/ติดตา รอบ1/รอบ2/ติด) เป็นแถวเดียว
+  const budKeys = Object.keys(typeMap).filter(isBuddingType);
+  if (budKeys.length) {
+    const g = { qty: 0, rounds: 0, days: 0, amount: 0, count: 0, byWorker: {}, isBudGroup: true, r1: 0, r2: 0, one: 0 };
+    budKeys.forEach(k => {
+      const t = typeMap[k];
+      const kind = buddingKind(k);
+      g[kind] += t.qty;
+      g.amount += t.amount; g.count += t.count;
+      delete typeMap[k];
+    });
+    g.qty = g.r1 + g.one;
+    typeMap[BUDDING_GROUP] = g;
+  }
+  window.__jobDashRange = { start: start.getTime(), end: end.getTime(), all: view === 'all' };
+
   const types = Object.keys(typeMap).sort((a, b) => typeMap[b].amount - typeMap[a].amount);
   window.__jobDashRows = typeMap;
 
@@ -5620,6 +5790,48 @@ function renderJobDashboard() {
   if (amountEl) amountEl.textContent = '฿' + totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   paintJobDashBody();
+}
+
+// v120: อ่านช่วงวันที่ตั้งแต่/ถึง ของแดชบอร์ดงานเหมา (ค่าเริ่มต้น = วันที่ 1 ของเดือนนี้ ถึง วันนี้)
+function parseISODateLocal(v) {
+  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+function getJobDashCustomRange() {
+  const fromEl = document.getElementById('jobDashFrom');
+  const toEl = document.getElementById('jobDashTo');
+  const today = new Date();
+  if (fromEl && !fromEl.value) fromEl.value = localISO(new Date(today.getFullYear(), today.getMonth(), 1));
+  if (toEl && !toEl.value) toEl.value = localISO(today);
+  let a = parseISODateLocal(fromEl && fromEl.value) || new Date(today.getFullYear(), today.getMonth(), 1);
+  let b = parseISODateLocal(toEl && toEl.value) || today;
+  let swapped = false;
+  if (a.getTime() > b.getTime()) { const t = a; a = b; b = t; swapped = true; }
+  return { start: startOfDay(a), end: endOfDay(b), swapped };
+}
+function toggleJobDashRange() {
+  const viewEl = document.getElementById('jobDashView');
+  if (!viewEl) return;
+  viewEl.value = viewEl.value === 'range' ? 'month' : 'range';
+  renderJobDashboard();
+  if (viewEl.value === 'range') { const f = document.getElementById('jobDashFrom'); if (f) f.focus(); }
+}
+function setJobDashPreset(kind) {
+  const fromEl = document.getElementById('jobDashFrom');
+  const toEl = document.getElementById('jobDashTo');
+  const viewEl = document.getElementById('jobDashView');
+  if (!fromEl || !toEl) return;
+  const t = new Date();
+  let a;
+  if (kind === 'last3') a = new Date(t.getFullYear(), t.getMonth() - 2, 1);
+  else if (kind === 'ytd') a = new Date(t.getFullYear(), 0, 1);
+  else a = new Date(t.getFullYear(), t.getMonth(), 1);
+  fromEl.value = localISO(a);
+  toEl.value = localISO(t);
+  if (viewEl) viewEl.value = 'range';
+  renderJobDashboard();
 }
 
 // escape เล็กๆ ใช้เฉพาะในตารางค้นหางานเหมา (กันชนกับฟังก์ชัน esc/escHtml อื่นที่ scope ไว้เฉพาะจุด)
@@ -5648,7 +5860,7 @@ function paintJobDashBody() {
   if (clearBtn) clearBtn.style.display = q ? '' : 'none';
 
   const allTypes = Object.keys(typeMap).sort((a, b) => typeMap[b].amount - typeMap[a].amount);
-  const types = q ? allTypes.filter(t => t.toLowerCase().includes(q.toLowerCase())) : allTypes;
+  const types = q ? allTypes.filter(t => t.toLowerCase().includes(q.toLowerCase()) || (t === BUDDING_GROUP && termHitsBudding(q, getAllJobTypeNames()))) : allTypes;
 
   const foundEl = document.getElementById('jobDashFound');
   if (foundEl) {
@@ -5682,8 +5894,8 @@ function paintJobDashBody() {
     const clickable = t !== DAILY_WAGE_LABEL;
     return `<tr ${clickable ? `style="cursor:pointer" onclick="openJobDashDetail('${encodeURIComponent(t)}')"` : ''}>
       <td>${i + 1}</td>
-      <td style="font-weight:600">${jdHighlight(t, q)}</td>
-      <td>${formatQtyWithRounds(row.qty, row.rounds, row.days, getJobUnitLabel(t))}</td>
+      <td style="font-weight:600">${row.isBudGroup ? '🌱 <b>ติดตายาง</b> <span style="font-weight:400;font-size:.75rem;color:var(--ink3)">รวมทุกรอบ</span>' : jdHighlight(t, q)}</td>
+      <td>${row.isBudGroup ? `ติด ${formatCalcNumber(row.qty)} ต้น${row.r2 ? ` · รอบ2 รอด ${formatCalcNumber(row.r2)} ต้น` : ''}` : formatQtyWithRounds(row.qty, row.rounds, row.days, getJobUnitLabel(t))}</td>
       <td>${row.count}</td>
       <td>฿${row.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
     </tr>`;
@@ -5703,6 +5915,21 @@ function clearJobDashSearch() {
 
 function openJobDashDetail(encodedType) {
   const t = decodeURIComponent(encodedType);
+  // v121: แถวรวมติดตา → เปิดหน้าสรุปกลุ่ม ใช้ช่วงวันที่เดียวกับแดชบอร์ด
+  if (t === BUDDING_GROUP) {
+    openJobTypeSearchModal(BUDDING_GROUP);
+    const r = window.__jobDashRange;
+    if (r && !r.all) {
+      const v = document.getElementById('jtsView');
+      const sd = document.getElementById('jtsStartDate');
+      const ed = document.getElementById('jtsEndDate');
+      if (v) v.value = 'custom';
+      if (sd) sd.value = localISO(new Date(r.start));
+      if (ed) ed.value = localISO(new Date(r.end));
+      onJtsViewChange();
+    }
+    return;
+  }
   const row = (window.__jobDashRows || {})[t];
   if (!row) return;
   const titleEl = document.getElementById('jobDashModalTitle');
@@ -12809,6 +13036,10 @@ window.addEventListener('load', function() {
     if(h.moneySrc === val){ delete h.moneySrc; delete h.moneySrcAt; }   // กดซ้ำ = เอาติ๊กออก
     else { h.moneySrc = val; h.moneySrcAt = Date.now(); }               // v116: จำเวลาที่ติ๊กไว้ด้วย
     if(viewMode === 'untag') untagKeep[String(w.id) + '|' + String(h.id)] = 1;
+    // v122: แจ้งระบบซิงค์ว่าคนงานคนนี้เปลี่ยน — เดิมไม่ได้แจ้ง ติ๊กจึงไม่ถูกส่งขึ้น Firebase
+    // พอปิดแล้วเปิดใหม่ ข้อมูลจาก Firebase (ที่ไม่มีติ๊ก) มาทับข้อมูลในเครื่อง ติ๊กเลยหาย
+    if(typeof recalcWorker === 'function') recalcWorker(w);
+    if(window.__dirtyWorkerIds) window.__dirtyWorkerIds.add(String(w.id));
     if(typeof saveData === 'function') saveData();
     if(typeof renderAll === 'function') renderAll();
     paRender();
@@ -14749,6 +14980,18 @@ body:has(#cbm-panel.open) #slipFab,body.ss-open #slipFab{display:none}
 </style>
 
 <button id="slipFab" type="button" onclick="ssOpen()" title="กดเพื่อแนบสลิป หรือลากรูปสลิปมาวางในหน้านี้ได้เลย">📷 แนบสลิป / บิล</button>
+<!-- v123: ปุ่มลอย "เบิกวันนี้" เหนือปุ่มแนบสลิป — ตัวเลขแดงอัปเดตเองผ่าน paBadge() เดิม (class pa-badge) -->
+<style id="pa-fab-v123">
+#paFab{position:fixed;right:18px;bottom:130px;z-index:1600;background:#a8521f;color:#fff;border:none;border-radius:999px;padding:12px 18px;font-family:'Mitr',sans-serif;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:6px}
+#paFab:active{transform:scale(.97)}
+#paFab .pa-badge{position:absolute;top:-7px;right:-5px;margin:0;min-width:22px;height:22px;font-size:.75rem;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+body:has(#cbm-panel.open) #paFab,body.ss-open #paFab,body:has(#payAlertModal.on) #paFab{display:none}
+@media(max-width:880px){
+  #paFab{bottom:calc(var(--mob-nav-h) + var(--safe-b) + 120px)!important;right:12px!important}
+  body.mob-overlay #paFab{display:none!important}
+}
+</style>
+<button id="paFab" type="button" onclick="if(window.paOpen)window.paOpen()" title="ดูว่าวันนี้ใครเบิกเงินบ้าง">🔔 เบิกวันนี้<span class="pa-badge zero">0</span></button>
 
 <div class="ss-bg" id="ssBg" onclick="if(event.target===this)ssClose()">
   <div class="ss-sheet" role="dialog" aria-modal="true" aria-labelledby="ssTitle">
