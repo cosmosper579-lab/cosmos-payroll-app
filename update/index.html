@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v123">
-<title>💰 จ่ายเงินคนงาน PRO v123</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v125">
+<title>💰 จ่ายเงินคนงาน PRO v125</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -966,7 +966,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v123 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v125 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1652,6 +1652,42 @@ body::before{
   </div>
 </div>
 
+<!-- v125: จัดรูปแบบงานเหมาทุกประเภท (รวมชื่อที่พิมพ์ผิด/บันทึกแบบเก่า ให้เป็นชื่อมาตรฐาน) -->
+<div class="modal-bg" id="jobFixModal" onclick="if(event.target===this)closeModal('jobFixModal')">
+  <div class="modal" style="max-width:600px">
+    <h2>🔧 จัดรูปแบบงานเหมาทุกประเภท</h2>
+    <div style="font-size:.74rem;color:var(--ink3);text-align:center;margin-bottom:8px">รวมรายการที่ชื่องานพิมพ์ผิด หรือบันทึกแบบเก่า ให้เป็นชื่อมาตรฐานเดียวกัน<br>ค้นหาแล้วยอดรวมตรง · <b style="color:#15803d">ยอดเงินเท่าเดิมทุกบาท</b> เปลี่ยนแค่วิธีบันทึก</div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:6px;font-size:.76rem">
+      <span style="cursor:pointer;color:var(--blue)" onclick="jobFixSelectAll(true)">✅ เลือกทั้งหมด</span>
+      <span style="cursor:pointer;color:var(--ink3)" onclick="jobFixSelectAll(false)">⬜ ไม่เลือกเลย</span>
+    </div>
+    <div id="jobFixBody" style="max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <div id="jobFixSummary" style="text-align:center;font-family:'Mitr';font-weight:700;font-size:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="m-save" onclick="saveJobFix()">✅ จัดรูปแบบที่เลือก</button>
+      <button class="m-cancel" onclick="closeModal('jobFixModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- v124: จัดรูปแบบรายการติดตายางเก่าให้เป็น "ติดตา รอบ1: อ้าง X ต้น (฿Y/ต้น)" -->
+<div class="modal-bg" id="buddingFixModal" onclick="if(event.target===this)closeModal('buddingFixModal')">
+  <div class="modal" style="max-width:560px">
+    <h2>🔧 จัดรูปแบบรายการติดตายาง</h2>
+    <div style="font-size:.74rem;color:var(--ink3);text-align:center;margin-bottom:8px">รายการเหล่านี้บันทึกไว้คนละแบบ (หรือพิมพ์ชื่อผิด) ระบบจะเปลี่ยนเป็นแบบ<br><b>"ติดตา รอบ1: อ้าง … ต้น (฿…/ต้น)"</b> · <b style="color:#15803d">ยอดเงินเท่าเดิมทุกบาท</b> เปลี่ยนแค่วิธีบันทึก</div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:6px;font-size:.76rem">
+      <span style="cursor:pointer;color:var(--blue)" onclick="buddingFixSelectAll(true)">✅ เลือกทั้งหมด</span>
+      <span style="cursor:pointer;color:var(--ink3)" onclick="buddingFixSelectAll(false)">⬜ ไม่เลือกเลย</span>
+    </div>
+    <div id="buddingFixBody" style="max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <div id="buddingFixSummary" style="text-align:center;font-family:'Mitr';font-weight:700;font-size:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="m-save" onclick="saveBuddingFix()">✅ แปลงที่เลือก</button>
+      <button class="m-cancel" onclick="closeModal('buddingFixModal')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <!-- รายการย่อยของคนงานคนหนึ่ง: ติ๊กเลือก + แก้ไขได้ทุกบรรทัด แล้วบันทึกทั้งหมดทีเดียว -->
 <div class="modal-bg" id="jobEntryListModal" onclick="if(event.target===this)closeModal('jobEntryListModal')">
   <div class="modal" style="max-width:480px">
@@ -1752,6 +1788,7 @@ body::before{
     <div class="set-sec">🔄 นำเข้า / ส่งออก</div>
     <div class="set-grid">
       <button class="set-item" onclick="settingsRun(()=>document.getElementById('buddingImportInput').click())"><i>🌱</i><span><b>นำเข้าติดตายาง</b><small>รวมข้อมูลจากระบบติดตายาง</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>openJobFixModal())"><i>🔧</i><span><b>จัดรูปแบบงานเหมา</b><small>ทุกประเภท: ชื่อพิมพ์ผิด/บันทึกแบบเก่า ให้ค้นหาได้</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>downloadCSV())"><i>📤</i><span><b>Export</b><small>ส่งออกประวัติเป็นไฟล์ CSV</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>exportWorkersExcel())"><i>📊</i><span><b>Excel</b><small>ส่งออกรายชื่อและยอดคนงาน</small></span></button>
     </div>
@@ -3479,7 +3516,9 @@ let _hdrDropIdx = -1;
 const BUDDING_GROUP = '🌱 ติดตายาง (รวมทุกรอบ)';
 function isBuddingType(name) {
   const n = String(name || '').trim();
-  return n === 'ติด' || n.startsWith('ติดตา');
+  if (n === 'ติด' || n.startsWith('ติดตา')) return true;
+  // v124: รับชื่อที่พิมพ์ผิดด้วย เช่น ติเตายาง, ติตายาง, ติดเตายาง, ติด ตายาง
+  return /^ติ[ดเ]?\s*เ?ตา/.test(n);
 }
 // ประเภทย่อยของกลุ่มติดตา: r1 = รอบ1 (แจ้งจำนวนที่ติด), r2 = รอบ2 (ตรวจต้นรอด), one = ติดตายาง/ติด แบบจ่ายครั้งเดียว
 function buddingKind(name) {
@@ -3655,6 +3694,14 @@ function renderJtsModal() {
   if (labelEl) labelEl.textContent = rangeLabel;
 
   if (name === BUDDING_GROUP) { renderJtsBuddingGroup(start, end); return; }
+  setTimeout(() => {
+    try {
+      const sumEl = document.getElementById('jtsSummary');
+      const n = findJobEntriesToFix().reduce((s, g) => s + g.items.length, 0);
+      if (sumEl && n && !sumEl.querySelector('.jf-hint')) sumEl.insertAdjacentHTML('beforeend',
+        `<button class="jf-hint" onclick="openJobFixModal()" style="margin-top:10px;width:100%;padding:9px 10px;border-radius:11px;border:1.5px solid #f59e0b;background:#fffbeb;color:#92400e;font-family:'Mitr';font-weight:700;font-size:.82rem;cursor:pointer">🔧 พบ ${n} รายการชื่องานพิมพ์ผิด/บันทึกแบบเก่า — กดเพื่อจัดให้ค้นหาได้</button>`);
+    } catch (e) { console.error(e); }
+  }, 0);
 
   let totalQty = 0, totalRounds = 0, totalCount = 0, totalAmount = 0;
   const byWorker = {};
@@ -3763,6 +3810,7 @@ function renderJtsBuddingGroup(start, end) {
   });
   const planted = tot.r1 + tot.one;
   window.__jtsRow = { qty: planted, rounds: 0, amount: tot.amount, count: tot.count, byWorker };
+  const _fixN = findBuddingEntriesToFix().length;
 
   const sumEl = document.getElementById('jtsSummary');
   if (sumEl) {
@@ -3790,6 +3838,7 @@ function renderJtsBuddingGroup(start, end) {
         <table style="width:100%;margin-top:10px;font-size:.78rem;font-weight:600;border-collapse:collapse;color:var(--ink2)">${typeRows}
           <tr style="border-top:1.5px solid var(--border)"><td style="text-align:left;padding:5px 6px">รวม</td><td></td><td style="text-align:right;padding:5px 6px">${tot.count} ครั้ง</td><td style="text-align:right;padding:5px 6px">${money(tot.amount)}</td></tr>
         </table>
+        ${_fixN ? `<button onclick="openBuddingFixModal()" style="margin-top:10px;width:100%;padding:9px 10px;border-radius:11px;border:1.5px solid #f59e0b;background:#fffbeb;color:#92400e;font-family:'Mitr';font-weight:700;font-size:.82rem;cursor:pointer">🔧 พบ ${_fixN} รายการบันทึกแบบเก่า — กดเพื่อจัดให้เป็นรูปแบบ "ติดตา รอบ1: อ้าง … ต้น"</button>` : ''}
         <div style="font-size:.7rem;color:var(--ink3);font-weight:400;margin-top:6px">ℹ️ จำนวนต้นไม่บวกรอบ2 เพราะรอบ2 คือการตรวจต้นเดิมว่ารอดกี่ต้น (บวกจะนับซ้ำ) แต่ยอดเงินรวมทุกรอบแล้ว</div>`;
     }
   }
@@ -3809,6 +3858,332 @@ function renderJtsBuddingGroup(start, end) {
         </div>
       </div>`).join('');
   }
+}
+
+// ==================== v124: จัดรูปแบบรายการติดตายาง ====================
+// ข้อความมาตรฐาน — เหมือนตอนบันทึกจากหน้าติดตายาง
+function buddingDetailText(workType, qty, rate) {
+  const q = Number(qty) || 0;
+  const r = Number((Number(rate) || 0).toFixed(4));
+  if (workType === 'ติดตา รอบ2') return `ติดตา รอบ2: รอด ${q.toLocaleString('th-TH')} ต้น (฿${r}/ต้น)`;
+  return `ติดตา รอบ1: อ้าง ${q.toLocaleString('th-TH')} ต้น (฿${r}/ต้น)`;
+}
+// หาจำนวนต้นจากข้อความเก่า เช่น "ติดตายาง 500 ต้น"
+function buddingQtyFromText(detail) {
+  const m = String(detail || '').match(/([\d,]+(?:\.\d+)?)\s*ต้น/);
+  if (!m) return 0;
+  const v = parseFloat(m[1].replace(/,/g, ''));
+  return Number.isFinite(v) ? v : 0;
+}
+// รายการติดตาที่ยังไม่ใช่รูปแบบมาตรฐาน
+//  - ติดตายาง / ติด / ชื่อพิมพ์ผิด (จ่ายครั้งเดียว) → เปลี่ยนเป็น รอบ1
+//  - ติดตา รอบ1 / รอบ2 ที่ข้อความถูกแก้จนเสียรูปแบบ → จัดข้อความใหม่ (คงรอบเดิม)
+// ไม่แตะงานแบบหารเงินตามรอบ (รอบที่ N) เพราะยอดเงินคิดคนละแบบ
+function findBuddingEntriesToFix() {
+  const out = [];
+  (workers || []).filter(w => w.id != OWNER_ID).forEach(w => {
+    (w.history || []).forEach(h => {
+      if (h.type !== 'piece') return;
+      const info = getPieceInfo(h);
+      if (!isBuddingType(info.workType) || info.isRound) return;
+      const detail = String(h.detail || '');
+      const kind = buddingKind(info.workType);
+      let target;
+      if (kind === 'r1') {
+        if (info.workType === 'ติดตา รอบ1' && /ติดตา รอบ1: อ้าง/.test(detail)) return;
+        target = 'ติดตา รอบ1';
+      } else if (kind === 'r2') {
+        if (info.workType === 'ติดตา รอบ2' && /ติดตา รอบ2: รอด/.test(detail)) return;
+        target = 'ติดตา รอบ2';
+      } else {
+        target = 'ติดตา รอบ1';
+      }
+      let qty = Number(info.qty) || 0;
+      if (!(qty > 0)) qty = buddingQtyFromText(detail);
+      out.push({ wid: w.id, wname: w.name, emoji: w.emoji || '👤', id: h.id, ts: h.ts, date: h.date,
+        oldType: info.workType, detail, amount: Number(h.amount || 0), qty, target });
+    });
+  });
+  return out.sort(payrollNewestFirst);
+}
+
+function openBuddingFixModal() {
+  const list = findBuddingEntriesToFix();
+  window.__buddingFixList = list;
+  const body = document.getElementById('buddingFixBody');
+  if (!body) return;
+  if (!list.length) {
+    toast('✅ รายการติดตายางทั้งหมดอยู่ในรูปแบบที่ค้นหาได้แล้ว');
+    return;
+  }
+  body.innerHTML = list.map((e, i) => {
+    const amtStr = '฿' + e.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const needQty = !(e.qty > 0);
+    return `
+    <div style="background:var(--bg);border:1px solid ${needQty ? '#f59e0b' : 'var(--border)'};border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:flex-start">
+      <input type="checkbox" id="bfChk_${i}" ${needQty ? '' : 'checked'} onchange="buddingFixPreview()" style="margin-top:6px;width:17px;height:17px;flex-shrink:0;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.74rem;color:var(--ink3)">${e.date || ''} · <b style="color:var(--ink2)">${e.emoji} ${jdEscHtml(e.wname)}</b></div>
+        <div style="font-size:.74rem;color:#b91c1c;text-decoration:line-through;word-break:break-word">เดิม: ${jdEscHtml(e.detail || e.oldType)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:.78rem">
+          <span style="color:var(--ink3)">จำนวนต้น</span>
+          <input type="text" inputmode="decimal" class="finput" id="bfQty_${i}" value="${e.qty > 0 ? formatCalcNumber(e.qty) : ''}" placeholder="ใส่จำนวนต้น"
+            style="padding:5px 8px;font-size:.8rem;width:110px;border-radius:8px" oninput="buddingFixPreview()" onblur="normalizeMathInput(this); buddingFixPreview()">
+          <span style="margin-left:auto;font-family:'Mitr';font-weight:700;color:var(--primary)">${amtStr}</span>
+        </div>
+        <div id="bfNew_${i}" style="font-size:.76rem;color:#15803d;font-weight:600;margin-top:3px;word-break:break-word"></div>
+      </div>
+    </div>`;
+  }).join('');
+  buddingFixPreview();
+  closeModal('jtsModal');
+  openModal('buddingFixModal');
+}
+
+function buddingFixSelectAll(on) {
+  (window.__buddingFixList || []).forEach((e, i) => {
+    const c = document.getElementById(`bfChk_${i}`);
+    if (c) c.checked = on;
+  });
+  buddingFixPreview();
+}
+
+function buddingFixPreview() {
+  const list = window.__buddingFixList || [];
+  let sel = 0, missing = 0, total = 0, trees = 0;
+  list.forEach((e, i) => {
+    const q = evalMathInput(document.getElementById(`bfQty_${i}`)?.value);
+    const ok = Number.isFinite(q) && q > 0;
+    const out = document.getElementById(`bfNew_${i}`);
+    if (out) out.textContent = ok ? '→ ใหม่: ' + buddingDetailText(e.target, q, e.amount / q) : '⚠️ ใส่จำนวนต้นก่อน จึงจะแปลงได้';
+    if (out) out.style.color = ok ? '#15803d' : '#b45309';
+    if (!document.getElementById(`bfChk_${i}`)?.checked) return;
+    sel++;
+    if (!ok) { missing++; return; }
+    total += e.amount;
+    if (e.target === 'ติดตา รอบ1') trees += q;
+  });
+  const sumEl = document.getElementById('buddingFixSummary');
+  if (!sumEl) return;
+  if (!sel) { sumEl.innerHTML = '<span style="color:var(--ink3)">ยังไม่ได้เลือกรายการ</span>'; return; }
+  sumEl.innerHTML = `เลือก ${sel} รายการ · ติด ${formatCalcNumber(trees)} ต้น · ยอดเงิน ฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ไม่เปลี่ยน)`
+    + (missing ? `<br><span style="color:#b45309">⚠️ ${missing} รายการยังไม่ใส่จำนวนต้น — จะข้ามไป</span>` : '');
+}
+
+function saveBuddingFix() {
+  const list = window.__buddingFixList || [];
+  const jobs = [];
+  list.forEach((e, i) => {
+    if (!document.getElementById(`bfChk_${i}`)?.checked) return;
+    const q = evalMathInput(document.getElementById(`bfQty_${i}`)?.value);
+    if (!Number.isFinite(q) || !(q > 0)) return;
+    jobs.push({ e, q });
+  });
+  if (!jobs.length) return toast('⚠️ ยังไม่มีรายการที่แปลงได้ (ติ๊กเลือก และใส่จำนวนต้น)');
+  requirePin(`จัดรูปแบบติดตายาง ${jobs.length} รายการ`, () => {
+    const touched = new Set();
+    let done = 0;
+    jobs.forEach(({ e, q }) => {
+      const w = workers.find(x => x.id == e.wid);
+      const h = w && (w.history || []).find(x => x.id == e.id);
+      if (!h) return;
+      const rate = e.amount / q;
+      // เก็บข้อความเดิมไว้ตรวจย้อนหลังได้ — ยอดเงิน (h.amount) ไม่แตะ
+      if (!h.origDetail) h.origDetail = h.detail || e.oldType;
+      h.workType = e.target;
+      h.qty = q;
+      h.detail = buddingDetailText(e.target, q, rate);
+      const p = (w.pending || []).find(x => x.id == e.id);
+      if (p) { p.workType = h.workType; p.qty = h.qty; p.detail = h.detail; }
+      touched.add(w);
+      done++;
+    });
+    touched.forEach(w => recalcWorker(w));
+    renderAll();
+    saveData();
+    closeModal('buddingFixModal');
+    toast(`✅ จัดรูปแบบติดตายางแล้ว ${done} รายการ · ยอดเงินเท่าเดิม`);
+  });
+}
+
+// ==================== v125: จัดรูปแบบงานเหมาทุกประเภท ====================
+// ชื่อมาตรฐาน = ประเภทงานเหมาบนปุ่ม (ขนยาง กรอกถุง ตัดรากยาง เสียบยาง ถอนยาง + ที่เพิ่มเอง เช่น เติมดิน ทำหญ้า) + รายชื่องานรายชิ้นเดิม
+// ติดตายางแยกไปใช้หน้า "จัดรูปแบบติดตายาง" เพราะต้องแปลงเป็น รอบ1/รอบ2
+function jobCanonNames() {
+  const set = [];
+  const add = n => { n = String(n || '').trim(); if (n && n !== 'อื่นๆ' && !isBuddingType(n) && !set.includes(n)) set.push(n); };
+  (FIXED_CONTRACT_TYPES || []).forEach(t => add(t.name));
+  (customContractTypes || []).forEach(t => add(t && t.name));
+  (WORK_TYPES || []).forEach(add);
+  return set;
+}
+function jobNormName(n) {
+  return String(n || '').replace(/[\s​-‍﻿]+/g, '').replace(/([่-๋ัิ-ฺ็์])\1+/g, '$1');
+}
+function jobEditDist(a, b) {
+  a = [...a]; b = [...b];
+  if (Math.abs(a.length - b.length) > 1) return 9;
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return dp[a.length][b.length];
+}
+// เดาชื่อมาตรฐานของชื่องานที่พิมพ์มา: ตรงกันเมื่อไม่นับช่องว่าง / ขึ้นต้นด้วยชื่อแล้วตามด้วยตัวเลข / พิมพ์ผิด 1 ตัวอักษร
+function jobCanonFor(name, canon) {
+  const n = jobNormName(name);
+  if (!n) return null;
+  canon = canon || jobCanonNames();
+  for (const c of canon) if (jobNormName(c) === n) return c;
+  for (const c of canon) {
+    const cn = jobNormName(c);
+    if (n.startsWith(cn) && /^[\d,.\-+×x*]*(ต้น|ถุง|บาท|หน่วย|ไร่|แถว|คน|วัน)?$/.test(n.slice(cn.length))) return c;
+  }
+  if ([...n].length >= 4) {
+    const hits = canon.filter(c => jobEditDist(jobNormName(c), n) <= 1);
+    if (hits.length === 1) return hits[0];
+  }
+  return null;
+}
+function jobNum(v) { return String(Number((Number(v) || 0).toFixed(4))); }
+
+// หารายการงานเหมา (ที่ไม่ใช่ติดตา) ที่ต้องจัดรูปแบบ แล้วจัดกลุ่มตาม "ชื่อเดิม → ชื่อมาตรฐาน"
+function findJobEntriesToFix() {
+  const canon = jobCanonNames();
+  const groups = {};
+  (workers || []).filter(w => w.id != OWNER_ID).forEach(w => {
+    (w.history || []).forEach(h => {
+      if (h.type !== 'piece') return;
+      const detail = String(h.detail || '');
+      const round = parseRoundDetail(detail);
+      const info = getPieceInfo(h);
+      const oldName = round ? (round.prefix || '').trim() : String(info.workType || '').trim();
+      if (!oldName || oldName === 'อื่นๆ') return;
+      if (isBuddingType(oldName) || isBuddingType(h.workType)) return;
+      let target = jobCanonFor(oldName, canon);
+      const missingType = !h.workType;
+      if (!target) {
+        if (!missingType) return;           // ชื่อที่ตั้งเองถูกต้องอยู่แล้ว ไม่ต้องยุ่ง
+        target = oldName;                  // แค่เติมชื่องานให้ระบบอ่านได้
+      }
+      const needs = missingType || h.workType !== target
+        || (round ? (round.prefix || '').trim() !== target : !detail.startsWith(target + ' '));
+      if (!needs) return;
+      const key = oldName + '→' + target;
+      if (!groups[key]) groups[key] = { key, oldName, target, items: [], amount: 0 };
+      groups[key].items.push({ wid: w.id, id: h.id, round: !!round, qty: Number(info.qty) || 0, amount: Number(h.amount || 0), detail });
+      groups[key].amount += Number(h.amount || 0);
+    });
+  });
+  return Object.values(groups).sort((a, b) => b.items.length - a.items.length);
+}
+
+function openJobFixModal() {
+  const groups = findJobEntriesToFix();
+  const budN = findBuddingEntriesToFix().length;
+  window.__jobFixGroups = groups;
+  const body = document.getElementById('jobFixBody');
+  if (!body) return;
+  if (!groups.length && !budN) { toast('✅ งานเหมาทุกประเภทอยู่ในรูปแบบที่ค้นหาได้แล้ว'); return; }
+  const canon = jobCanonNames();
+  const money = n => '฿' + Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let html = '';
+  if (budN) {
+    html += `<div style="background:#f0fdf4;border:1.5px solid #34d399;border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:8px">
+      <div style="flex:1;font-size:.8rem"><b>🌱 ติดตายาง</b> — ${budN} รายการบันทึกแบบเก่า/ชื่อพิมพ์ผิด<br><span style="color:var(--ink3);font-size:.72rem">ต้องแปลงเป็น "ติดตา รอบ1: อ้าง … ต้น" (ตรวจจำนวนต้นทีละรายการ)</span></div>
+      <button onclick="closeModal('jobFixModal');openBuddingFixModal()" style="padding:7px 12px;border-radius:9px;border:none;background:#16a34a;color:#fff;font-family:'Mitr';font-weight:700;cursor:pointer">จัดติดตายาง ›</button>
+    </div>`;
+  }
+  html += groups.map((g, i) => {
+    const same = g.oldName === g.target;
+    const opts = [...new Set([g.target, ...canon])].map(c => `<option value="${jdEscHtml(c)}" ${c === g.target ? 'selected' : ''}>${jdEscHtml(c)}</option>`).join('');
+    const ex = g.items.slice(0, 2).map(x => jdEscHtml(x.detail)).join('<br>');
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:flex-start">
+      <input type="checkbox" id="jfChk_${i}" checked onchange="jobFixPreview()" style="margin-top:6px;width:17px;height:17px;flex-shrink:0;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.82rem"><b style="color:#b91c1c">${jdEscHtml(g.oldName)}</b> <span style="color:var(--ink3);font-size:.74rem">· ${g.items.length} รายการ · ${money(g.amount)}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin:4px 0;font-size:.78rem">
+          <span style="color:var(--ink3);white-space:nowrap;flex-shrink:0">${same ? 'เติมชื่องาน' : 'เปลี่ยนเป็น'} →</span>
+          <select id="jfSel_${i}" class="dash-select" onchange="jobFixPreview()" style="font-size:.8rem;padding:4px 8px;flex:1;min-width:0">${opts}</select>
+        </div>
+        <div style="font-size:.7rem;color:var(--ink3);word-break:break-word">ตัวอย่าง: ${ex}${g.items.length > 2 ? ' …' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  body.innerHTML = html;
+  jobFixPreview();
+  closeModal('jtsModal');
+  openModal('jobFixModal');
+}
+
+function jobFixSelectAll(on) {
+  (window.__jobFixGroups || []).forEach((g, i) => { const c = document.getElementById(`jfChk_${i}`); if (c) c.checked = on; });
+  jobFixPreview();
+}
+
+function jobFixPreview() {
+  const gs = window.__jobFixGroups || [];
+  let g = 0, n = 0, amt = 0;
+  gs.forEach((x, i) => { if (!document.getElementById(`jfChk_${i}`)?.checked) return; g++; n += x.items.length; amt += x.amount; });
+  const el = document.getElementById('jobFixSummary');
+  if (!el) return;
+  el.innerHTML = gs.length
+    ? (g ? `เลือก ${g} กลุ่ม · ${n} รายการ · ยอดเงิน ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ไม่เปลี่ยน)` : '<span style="color:var(--ink3)">ยังไม่ได้เลือก</span>')
+    : '<span style="color:var(--ink3)">งานประเภทอื่นเรียบร้อยแล้ว เหลือแค่ติดตายาง</span>';
+}
+
+// จัดรูปแบบรายการเดียว — ไม่แตะยอดเงิน (h.amount)
+function applyJobFixToEntry(w, h, target) {
+  const detail = String(h.detail || '');
+  if (!h.origDetail) h.origDetail = detail;
+  const round = parseRoundDetail(detail);
+  if (round) {
+    // งานหารเงินตามรอบ: เปลี่ยนแค่ชื่อหน้าข้อความ คง "รอบที่ N (P% ของ M ÷ C คน)" ไว้เหมือนเดิม
+    h.detail = detail.replace(/^.*?(?=รอบที่)/, target + ' ');
+    h.workType = target;
+    if (!Number.isFinite(Number(h.qty))) h.qty = 1;
+  } else {
+    const info = getPieceInfo(h);
+    let qty = Number(info.qty) || 0;
+    if (!(qty > 0)) {
+      const m = detail.match(/([\d,]+(?:\.\d+)?)\s*(ต้น|ถุง|หน่วย|ไร่|แถว)/);
+      if (m) qty = parseFloat(m[1].replace(/,/g, '')) || 0;
+    }
+    h.workType = target;
+    h.qty = qty;
+    h.detail = qty > 0 ? `${target} ${jobNum(qty)} × ${jobNum(Number(h.amount || 0) / qty)}` : target;
+  }
+  const p = (w.pending || []).find(x => x.id == h.id);
+  if (p) { p.workType = h.workType; p.qty = h.qty; p.detail = h.detail; }
+}
+
+function saveJobFix() {
+  const gs = window.__jobFixGroups || [];
+  const jobs = [];
+  gs.forEach((g, i) => {
+    if (!document.getElementById(`jfChk_${i}`)?.checked) return;
+    const target = (document.getElementById(`jfSel_${i}`)?.value || g.target).trim();
+    if (target) jobs.push({ g, target });
+  });
+  if (!jobs.length) return toast('⚠️ กรุณาติ๊กเลือกกลุ่มที่จะจัดรูปแบบ');
+  const total = jobs.reduce((s, j) => s + j.g.items.length, 0);
+  requirePin(`จัดรูปแบบงานเหมา ${total} รายการ`, () => {
+    const touched = new Set();
+    let done = 0;
+    jobs.forEach(({ g, target }) => g.items.forEach(it => {
+      const w = workers.find(x => x.id == it.wid);
+      const h = w && (w.history || []).find(x => x.id == it.id);
+      if (!h) return;
+      applyJobFixToEntry(w, h, target);
+      touched.add(w); done++;
+    }));
+    touched.forEach(w => recalcWorker(w));
+    renderAll();
+    saveData();
+    closeModal('jobFixModal');
+    const budLeft = findBuddingEntriesToFix().length;
+    toast(`✅ จัดรูปแบบงานเหมาแล้ว ${done} รายการ · ยอดเงินเท่าเดิม` + (budLeft ? ` · เหลือติดตายาง ${budLeft} รายการ` : ''));
+  });
 }
 
 // เปิดรายการย่อยของคนงานคนหนึ่ง จากหน้าค้นหางาน — ใช้ modal แก้ไขรายการเดิมร่วมกัน
@@ -6322,7 +6697,12 @@ function saveAllJobEntries() {
       const rateText = formatPiecePart(v2Raw, v2);
       h.workType = workType;
       h.qty = v1;
-      h.detail = `${workType} ${qtyText} × ${rateText}`;
+      // v124: ติดตา รอบ1/รอบ2 ใช้รูปแบบข้อความเดิมเสมอ เพื่อให้ค้นหา/อ่านจำนวนต้นได้
+      if (workType === 'ติดตา รอบ1' || workType === 'ติดตา รอบ2') {
+        h.detail = buddingDetailText(workType, v1, v2);
+      } else {
+        h.detail = `${workType} ${qtyText} × ${rateText}`;
+      }
     }
 
     const pendingIndex = (w.pending || []).findIndex(p => p.id == e.id);
