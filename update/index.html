@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v131">
-<title>💰 จ่ายเงินคนงาน PRO v131</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v132">
+<title>💰 จ่ายเงินคนงาน PRO v132</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -226,6 +226,29 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-
   justify-content:center;min-height:60vh;gap:10px;color:var(--ink3);text-align:center}
 
 .detail-view{display:none}
+/* v132: ช่องคนงานสี่เหลี่ยม */
+.placeholder-view.wtile-view{display:block;min-height:60vh;text-align:left;padding:4px 2px}
+.wtile-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 4px 12px}
+.wtile-title{font-family:'Mitr';font-weight:600;font-size:1.05rem;color:var(--ink)}
+.wtile-title span{font-size:.8rem;color:var(--ink3);font-weight:400}
+.wtile-sum{font-size:.8rem;color:var(--ink2);display:flex;gap:12px;flex-wrap:wrap}
+.wtile-sum b{font-family:'Mitr'}
+.wtile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.wtile{position:relative;aspect-ratio:1/1;background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;text-align:center;min-width:0}
+.wtile:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(30,41,59,.12);border-color:#a5b4fc}
+.wtile .w-photo{width:72px;height:72px}
+.wtile-emo{font-size:3rem;line-height:1}
+.wtile-name{font-family:'Mitr';font-weight:500;font-size:1rem;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wtile-bal{font-family:'Mitr';font-weight:600;font-size:1.02rem}
+.wtile-bal.pos{color:var(--green)}.wtile-bal.neg{color:var(--primary)}.wtile-bal.zero{color:#9ca3af}
+.wtile-cap{font-size:.66rem;color:var(--ink3);margin-top:-4px}
+.wtile .adv-badge{margin-left:0}
+.wtile .w-dot{top:12px;right:12px}
+.wtile.owe{border-color:#86efac;background:#f7fef9}
+.wtile.neg{border-color:#fecaca;background:#fffafa}
+.wtile-back{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'Sarabun'}
+.wtile-back:hover{border-color:#a5b4fc}
+@media(max-width:880px){.wtile-back{display:none}.wtile-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}}
 .detail-view.active{display:block}
 
 .detail-hdr{background:linear-gradient(135deg,#1a1a2e,#2d1b3d);border-radius:var(--radius);
@@ -966,7 +989,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v131 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v132 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1158,14 +1181,18 @@ body::before{
   <!-- RIGHT -->
   <div class="side-right" id="sideRight">
 
-    <div class="placeholder-view" id="placeholder">
-      <span style="font-size:3.5rem">👈</span>
-      <h2 style="font-family:&#39;Mitr&#39;;color:#ccc;font-size:1rem">เลือกคนงานด้านซ้าย</h2>
-      <p style="font-size:.82rem">เพื่อบันทึกเวลาทำงาน งานเหมา หรือจ่ายเงิน</p>
+    <div class="placeholder-view wtile-view" id="placeholder">
+      <!-- v132: รายชื่อคนงานเป็นช่องสี่เหลี่ยม โชว์ยอดเงิน กดแล้วเข้าหน้าคนงาน -->
+      <div class="wtile-head">
+        <div class="wtile-title">👥 คนงานทั้งหมด <span id="wtileCount"></span></div>
+        <div class="wtile-sum" id="wtileSum"></div>
+      </div>
+      <div class="wtile-grid" id="wtileGrid"></div>
     </div>
 
     <div class="detail-view" id="detailView">
 
+      <button type="button" class="wtile-back" id="btnBackTiles" onclick="backToWorkerTiles()">◀ คนงานทั้งหมด</button>
       <button id="btnBack" onclick="closeMob()" style="display:none;align-items:center;gap:6px;padding:8px 16px;
           background:var(--bg);border:1.5px solid var(--border);border-radius:50px;
           cursor:pointer;font-size:.82rem;font-weight:600;font-family:&#39;Sarabun&#39;;
@@ -5236,6 +5263,53 @@ function confirmDelWorker() {
 
 // ==================== Rendering ====================
 
+// ==================== v132: ช่องคนงานสี่เหลี่ยม (หน้าแรกด้านขวา) ====================
+function renderWorkerTiles() {
+  const grid = document.getElementById('wtileGrid');
+  if (!grid) return;
+  let list = workers.filter(w => w.id != OWNER_ID);
+  if (searchTerm) list = list.filter(w => String(w.name || '').toLowerCase().includes(searchTerm));
+  const money = n => '฿' + Math.abs(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const cnt = document.getElementById('wtileCount');
+  if (cnt) cnt.textContent = '(' + list.length + ' คน)';
+  let owe = 0, neg = 0, adv = 0;
+  list.forEach(w => { const b = w.balance || 0; if (b > 0) owe += b; else neg += -b; adv += (w.advanceOwed || 0); });
+  const sumEl = document.getElementById('wtileSum');
+  if (sumEl) sumEl.innerHTML = `<span>💰 ค้างจ่ายรวม <b style="color:var(--green)">${money(owe)}</b></span>`
+    + (neg ? `<span>💸 ติดเงินเรา <b style="color:var(--primary)">${money(neg)}</b></span>` : '')
+    + (adv ? `<span>⏱️ ล่วงหน้า <b style="color:#dc2626">${money(adv)}</b></span>` : '');
+  if (!list.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 10px;color:var(--ink3)">${searchTerm ? '🔍 ไม่พบคนงาน "' + jdEscHtml(searchTerm) + '"' : 'ยังไม่มีคนงาน — กด ➕ เพิ่มคนงาน'}</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(w => {
+    const b = w.balance || 0;
+    const cls = b > 0 ? 'pos' : (b < 0 ? 'neg' : 'zero');
+    const cap = b > 0 ? 'ค้างจ่าย' : (b < 0 ? 'ติดเงินเรา' : 'ไม่มียอดค้าง');
+    const av = w.photo ? '<img class="w-photo" src="' + w.photo + '" alt="">' : '<div class="wtile-emo">' + (w.emoji || '👤') + '</div>';
+    return '<div class="wtile' + (b > 0 ? ' owe' : (b < 0 ? ' neg' : '')) + '" onclick="openDetail(' + w.id + ')" title="กดเพื่อเปิดหน้า ' + jdEscHtml(w.name) + '">'
+      + ((w.pending || []).length ? '<div class="w-dot"></div>' : '')
+      + av
+      + '<div class="wtile-name">' + jdEscHtml(w.name) + '</div>'
+      + '<div class="wtile-bal ' + cls + '">' + (b < 0 ? '-' : '') + money(b) + '</div>'
+      + '<div class="wtile-cap">' + cap + '</div>'
+      + ((w.advanceOwed || 0) > 0 ? '<span class="adv-badge">ล่วงหน้า ' + formatMoney(w.advanceOwed) + '</span>' : '')
+      + '</div>';
+  }).join('');
+}
+// กลับจากหน้าคนงาน → หน้าช่องคนงาน
+function backToWorkerTiles() {
+  currentWid = null;
+  const placeholder = document.getElementById('placeholder');
+  const detailView = document.getElementById('detailView');
+  const sideRight = document.getElementById('sideRight');
+  if (placeholder) placeholder.style.display = '';
+  if (detailView) detailView.classList.remove('active');
+  if (sideRight) sideRight.classList.remove('mob');
+  renderAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function renderAll() {
   renderGrid();
   renderSummary();
@@ -5263,6 +5337,9 @@ function renderAll() {
 }
 
 function renderGrid() {
+  try { _renderGridInner(); } finally { try { renderWorkerTiles(); } catch (e) { console.error(e); } }
+}
+function _renderGridInner() {
   // v106: อ่านคำค้นจากช่องค้นหาทุกครั้ง — เดิมค่าในช่องกับตัวกรองหลุดกันได้ (เช่น เลือกชื่อจากช่องค้นหาด้านบน หรือเบราว์เซอร์จำค่าเดิมตอนเปิดหน้าใหม่)
   // ทำให้ช่องโชว์ชื่ออยู่แต่รายชื่อไม่ถูกกรอง
   const _sw = document.getElementById('searchWorker');
