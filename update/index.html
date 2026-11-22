@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v125">
-<title>💰 จ่ายเงินคนงาน PRO v125</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v131">
+<title>💰 จ่ายเงินคนงาน PRO v131</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -966,7 +966,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v125 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v131 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1640,15 +1640,43 @@ body::before{
       </select>
       <input id="jtsRefDate" class="dash-input" type="date" onchange="renderJtsModal()">
     </div>
-    <div id="jtsCustomRange" class="dash-controls" style="justify-content:center;margin-bottom:8px;display:none">
-      <input id="jtsStartDate" class="dash-input" type="date" onchange="renderJtsModal()">
-      <span style="align-self:center;color:var(--ink3);font-size:.8rem">ถึง</span>
-      <input id="jtsEndDate" class="dash-input" type="date" onchange="renderJtsModal()">
+    <div id="jtsCustomRange" class="dash-controls" style="justify-content:center;align-items:center;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px">
+      <span style="color:var(--ink2);font-size:.8rem;font-weight:600">📅 ตั้งแต่</span>
+      <input id="jtsStartDate" class="dash-input" type="date" onchange="jtsRangePicked()">
+      <span style="color:var(--ink2);font-size:.8rem;font-weight:600">ถึง</span>
+      <input id="jtsEndDate" class="dash-input" type="date" onchange="jtsRangePicked()">
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button type="button" class="thdp-chip" onclick="jtsQuickRange('month')">เดือนนี้</button>
+      <button type="button" class="thdp-chip" onclick="jtsQuickRange('3m')">3 เดือนล่าสุด</button>
+      <button type="button" class="thdp-chip" onclick="jtsQuickRange('ytd')">ต้นปีถึงวันนี้</button>
+      <button type="button" class="thdp-chip" onclick="jtsQuickRange('all')">ทั้งหมด</button>
     </div>
     <div id="jtsRangeLabel" class="modal-note" style="margin-bottom:8px;text-align:center"></div>
     <div id="jtsSummary" style="font-family:'Mitr';font-size:.92rem;font-weight:700;color:var(--primary);margin-bottom:12px;text-align:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px;line-height:1.6"></div>
     <div id="jtsList" style="max-height:44vh;overflow:auto;display:flex;flex-direction:column;gap:6px"></div>
     <div class="modal-btns"><button class="m-cancel" onclick="closeModal('jtsModal')">ปิด</button></div>
+  </div>
+</div>
+
+<!-- v126: ตรวจจำนวนต้นของงานเหมา (ตัดรากยาง/เสียบยาง/ถอนยาง) — ยอดเงินไม่เปลี่ยน -->
+<div class="modal-bg" id="treeFixModal" onclick="if(event.target===this)closeModal('treeFixModal')">
+  <div class="modal" style="max-width:600px">
+    <h2 id="treeFixTitle">🌳 ตรวจจำนวนต้น</h2>
+    <div style="font-size:.74rem;color:var(--ink3);text-align:center;margin-bottom:8px">รายการเหล่านี้ระบบนับจำนวนต้นไม่ได้ หรือนับผิด · แก้ "จำนวนต้น" หรือ "ราคา/ต้น" ช่องใดช่องหนึ่ง อีกช่องคิดให้เอง<br><b style="color:#15803d">ยอดเงินเท่าเดิมทุกบาท</b> แก้แค่จำนวนต้นที่บันทึกไว้</div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:6px;font-size:.76rem">
+      <span id="tfBulkWrap" style="margin-right:auto;display:flex;align-items:center;gap:5px;color:var(--ink2)">💰 เงินก้อนทั้งหมด ราคา/ต้น
+        <input type="text" inputmode="decimal" id="tfBulkRate" placeholder="0.45" style="width:62px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;font-size:.78rem">
+        <button onclick="treeFixBulkRate()" style="padding:3px 9px;border-radius:7px;border:none;background:#16a34a;color:#fff;font-family:'Mitr';font-size:.74rem;cursor:pointer">ใส่ให้ทั้งหมด</button></span>
+      <span style="cursor:pointer;color:var(--blue)" onclick="treeFixSelectAll(true)">✅ เลือกทั้งหมด</span>
+      <span style="cursor:pointer;color:var(--ink3)" onclick="treeFixSelectAll(false)">⬜ ไม่เลือกเลย</span>
+    </div>
+    <div id="treeFixBody" style="max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <div id="treeFixSummary" style="text-align:center;font-family:'Mitr';font-weight:700;font-size:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="m-save" onclick="saveTreeFix()">✅ บันทึกจำนวนต้น</button>
+      <button class="m-cancel" onclick="closeModal('treeFixModal')">ปิด</button>
+    </div>
   </div>
 </div>
 
@@ -3650,8 +3678,27 @@ function onJtsViewChange() {
   const customEl = document.getElementById('jtsCustomRange');
   const isCustom = viewEl && viewEl.value === 'custom';
   if (refEl) refEl.style.display = isCustom ? 'none' : '';
-  if (customEl) customEl.style.display = isCustom ? 'flex' : 'none';
+  // v131: แถวช่วงวันที่โชว์ตลอด — ตอนไม่ได้ใช้ให้จางลง
+  if (customEl) { customEl.style.display = 'flex'; customEl.style.opacity = isCustom ? '1' : '.55'; }
   renderJtsModal();
+}
+// v131: เลือกวันที่ในแถว "ตั้งแต่ … ถึง …" → สลับเป็น "กำหนดเอง" ให้เอง
+function jtsRangePicked() {
+  const viewEl = document.getElementById('jtsView');
+  if (viewEl && viewEl.value !== 'custom') viewEl.value = 'custom';
+  onJtsViewChange();
+}
+function jtsQuickRange(kind) {
+  const viewEl = document.getElementById('jtsView');
+  if (kind === 'all') { if (viewEl) viewEl.value = 'all'; onJtsViewChange(); return; }
+  const now = new Date();
+  let s;
+  if (kind === 'month') s = new Date(now.getFullYear(), now.getMonth(), 1);
+  else if (kind === '3m') s = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  else s = new Date(now.getFullYear(), 0, 1);
+  document.getElementById('jtsStartDate').value = localISO(s);
+  document.getElementById('jtsEndDate').value = localISO(now);
+  jtsRangePicked();
 }
 
 function renderJtsModal() {
@@ -3697,6 +3744,11 @@ function renderJtsModal() {
   setTimeout(() => {
     try {
       const sumEl = document.getElementById('jtsSummary');
+      if (sumEl && TREE_FIX_JOBS.includes(name) && !sumEl.querySelector('.tf-hint')) {
+        const tn = findTreeEntriesToFix(name).length;
+        if (tn) sumEl.insertAdjacentHTML('beforeend',
+          `<button class="tf-hint" onclick="openTreeFixModal('${name}')" style="margin-top:10px;width:100%;padding:9px 10px;border-radius:11px;border:1.5px solid #16a34a;background:#f0fdf4;color:#14532d;font-family:'Mitr';font-weight:700;font-size:.82rem;cursor:pointer">🌳 พบ ${tn} รายการที่จำนวนต้นยังไม่ครบ — กดเพื่อตรวจและใส่จำนวนต้น</button>`);
+      }
       const n = findJobEntriesToFix().reduce((s, g) => s + g.items.length, 0);
       if (sumEl && n && !sumEl.querySelector('.jf-hint')) sumEl.insertAdjacentHTML('beforeend',
         `<button class="jf-hint" onclick="openJobFixModal()" style="margin-top:10px;width:100%;padding:9px 10px;border-radius:11px;border:1.5px solid #f59e0b;background:#fffbeb;color:#92400e;font-family:'Mitr';font-weight:700;font-size:.82rem;cursor:pointer">🔧 พบ ${n} รายการชื่องานพิมพ์ผิด/บันทึกแบบเก่า — กดเพื่อจัดให้ค้นหาได้</button>`);
@@ -4009,12 +4061,31 @@ function saveBuddingFix() {
 // ==================== v125: จัดรูปแบบงานเหมาทุกประเภท ====================
 // ชื่อมาตรฐาน = ประเภทงานเหมาบนปุ่ม (ขนยาง กรอกถุง ตัดรากยาง เสียบยาง ถอนยาง + ที่เพิ่มเอง เช่น เติมดิน ทำหญ้า) + รายชื่องานรายชิ้นเดิม
 // ติดตายางแยกไปใช้หน้า "จัดรูปแบบติดตายาง" เพราะต้องแปลงเป็น รอบ1/รอบ2
+// v129: ชื่อเรียกเก่าของงานเดียวกัน (ผู้ใช้ยืนยัน: ขึ้นยาง = ขนยาง)
+const JOB_ALIASES = { 'ขึ้นยาง': 'ขนยาง', 'ขึ้น': 'ขนยาง' };
+function jobAliasFor(name) {
+  const n = jobNormName(name);
+  for (const k of Object.keys(JOB_ALIASES)) {
+    const kn = jobNormName(k);
+    if (n === kn || (n.startsWith(kn) && /^[\d,.\-+×x*]*(ต้น|ถุง|บาท|หน่วย)?$/.test(n.slice(kn.length)))) return JOB_ALIASES[k];
+  }
+  return null;
+}
 function jobCanonNames() {
   const set = [];
-  const add = n => { n = String(n || '').trim(); if (n && n !== 'อื่นๆ' && !isBuddingType(n) && !set.includes(n)) set.push(n); };
+  const add = n => { n = String(n || '').trim(); if (n && n !== 'อื่นๆ' && !isBuddingType(n) && !jobAliasFor(n) && !set.includes(n)) set.push(n); };
   (FIXED_CONTRACT_TYPES || []).forEach(t => add(t.name));
   (customContractTypes || []).forEach(t => add(t && t.name));
   (WORK_TYPES || []).forEach(add);
+  // v128: ชื่อที่พิมพ์เองและใช้บ่อย (≥3 รายการ) ถือเป็นชื่อมาตรฐานด้วย เช่น เขย่าถุง ขึ้นยาง
+  const cnt = {};
+  (workers || []).forEach(w => (w.history || []).forEach(h => {
+    if (h.type !== 'piece') return;
+    const rd = parseRoundDetail(h.detail);
+    const n = String(rd ? (rd.prefix || '').trim() : (getPieceInfo(h).workType || '')).trim();
+    if (n) cnt[n] = (cnt[n] || 0) + 1;
+  }));
+  Object.keys(cnt).filter(n => cnt[n] >= 3 && !/\d/.test(n)).sort((a, b) => cnt[b] - cnt[a]).forEach(add);
   return set;
 }
 function jobNormName(n) {
@@ -4033,6 +4104,8 @@ function jobEditDist(a, b) {
 function jobCanonFor(name, canon) {
   const n = jobNormName(name);
   if (!n) return null;
+  const alias = jobAliasFor(name);
+  if (alias) return alias;
   canon = canon || jobCanonNames();
   for (const c of canon) if (jobNormName(c) === n) return c;
   for (const c of canon) {
@@ -4041,6 +4114,11 @@ function jobCanonFor(name, canon) {
   }
   if ([...n].length >= 4) {
     const hits = canon.filter(c => jobEditDist(jobNormName(c), n) <= 1);
+    if (hits.length === 1) return hits[0];
+  }
+  // v128: ชื่อย่อ เช่น "หญ้า" → ทำหญ้า, "ขึ้น" → ขึ้นยาง
+  if ([...n].length >= 3) {
+    const hits = canon.filter(c => { const cn = jobNormName(c); return cn !== n && (cn.endsWith(n) || cn === n + 'ยาง'); });
     if (hits.length === 1) return hits[0];
   }
   return null;
@@ -4183,6 +4261,173 @@ function saveJobFix() {
     closeModal('jobFixModal');
     const budLeft = findBuddingEntriesToFix().length;
     toast(`✅ จัดรูปแบบงานเหมาแล้ว ${done} รายการ · ยอดเงินเท่าเดิม` + (budLeft ? ` · เหลือติดตายาง ${budLeft} รายการ` : ''));
+  });
+}
+
+// ==================== v126: ตรวจจำนวนต้นของงานเหมา ====================
+// งานที่นับเป็นต้น — แบบรอบทุกงานนี้ ช่องยอดคือจำนวนต้นทั้งรอบ และ % = สตางค์ต่อต้น (ขนยางหารต้นตามจำนวนคน)
+const TREE_FIX_JOBS = ['ตัดรากยาง', 'เสียบยาง', 'ถอนยาง', 'ขนยาง'];
+const TREE_BUNDLE_SIZE = 100;   // 1 มัด = 100 ต้น
+// หารายการที่จำนวนต้นหาย/ผิด:
+//  A) แบบรอบที่ไม่มีจำนวนต้น → ตัวเลขในช่องยอดคือจำนวนต้น (% = สตางค์ต่อต้น)
+//  B) ราคาต่อหน่วยตั้งแต่ 5 บาท → น่าจะนับเป็นมัด (มัดละ 100 ต้น)
+//  C) จำนวน 1 (เงินก้อน) → ต้องใส่ราคา/ต้น หรือจำนวนต้นเอง
+function findTreeEntriesToFix(job) {
+  const out = [];
+  (workers || []).filter(w => w.id != OWNER_ID).forEach(w => {
+    (w.history || []).forEach(h => {
+      if (h.type !== 'piece') return;
+      const detail = String(h.detail || '');
+      const round = parseRoundDetail(detail);
+      const info = getPieceInfo(h);
+      const name = round ? (round.prefix || '').trim() : String(info.workType || '').trim();
+      if (name !== job) return;
+      const amount = Number(h.amount || 0);
+      if (!(amount > 0)) return;
+      let kind = '', trees = 0;
+      if (round) {
+        // v129: แบบรอบทุกรายการเปลี่ยนเป็น "จำนวนต้น × ราคา/ต้น" (ต้นของคนนี้ = ต้นทั้งรอบ ÷ จำนวนคน)
+        kind = 'A'; trees = Number(h.realQty) > 0 ? Number(h.realQty) : (Number(round.money) || 0) / (round.count || 1);
+      } else {
+        const q = Number(info.qty) || 0;
+        if (q > 1 && amount / q >= 5) { kind = 'B'; trees = q * TREE_BUNDLE_SIZE; }
+        else if (q <= 1) { kind = 'C'; trees = 0; }
+        else return;
+      }
+      out.push({ wid: w.id, wname: w.name, emoji: w.emoji || '👤', id: h.id, ts: h.ts, date: h.date,
+        detail, amount, kind, trees, roundCount: round ? (round.count || 1) : 1, isRound: !!round });
+    });
+  });
+  return out.sort(payrollNewestFirst);
+}
+
+function openTreeFixModal(job) {
+  const list = findTreeEntriesToFix(job);
+  window.__treeFix = { job, list };
+  if (!list.length) { toast('✅ ' + job + ' ทุกรายการมีจำนวนต้นครบแล้ว'); return; }
+  const t = document.getElementById('treeFixTitle');
+  if (t) t.textContent = '🌳 ตรวจจำนวนต้น — ' + job;
+  const note = {
+    A: 'แบบรอบ: ตัวเลขช่องยอดคือจำนวนต้นทั้งรอบ (% = สตางค์/ต้น) — ถ้าหลายคน หารต้นตามจำนวนคน',
+    B: `ราคาต่อหน่วยสูง น่าจะนับเป็นมัด (มัดละ ${TREE_BUNDLE_SIZE} ต้น)`,
+    C: 'เงินก้อน ไม่มีจำนวนต้น — ใส่ราคา/ต้น หรือจำนวนต้น'
+  };
+  const money = n => '฿' + Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('treeFixBody').innerHTML = list.map((e, i) => {
+    const has = e.trees > 0;
+    return `<div style="background:var(--bg);border:1px solid ${has ? 'var(--border)' : '#f59e0b'};border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:flex-start">
+      <input type="checkbox" id="tfChk_${i}" ${has ? 'checked' : ''} onchange="treeFixPreview()" style="margin-top:6px;width:17px;height:17px;flex-shrink:0;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:6px;font-size:.76rem"><span style="color:var(--ink3)">${e.date || ''} · <b style="color:var(--ink2)">${e.emoji} ${jdEscHtml(e.wname)}</b></span><b style="font-family:'Mitr';color:var(--primary)">${money(e.amount)}</b></div>
+        <div style="font-size:.74rem;color:var(--ink2);word-break:break-word">เดิม: ${jdEscHtml(e.detail)}</div>
+        <div style="font-size:.7rem;color:#b45309;margin-bottom:4px">${note[e.kind]}</div>
+        <div style="display:flex;align-items:flex-end;gap:6px">
+          <div style="flex:1"><div style="font-size:.65rem;color:var(--ink3)">🌳 จำนวนต้น</div>
+            <input type="text" inputmode="decimal" class="finput" id="tfTree_${i}" value="${has ? jobNum(e.trees) : ''}" placeholder="กี่ต้น" style="padding:6px 8px;font-size:.82rem;width:100%;border-radius:8px" oninput="treeFixLink(${i},'tree')"></div>
+          <span style="color:var(--ink3);font-size:.8rem;padding-bottom:7px">×</span>
+          <div style="flex:1"><div style="font-size:.65rem;color:var(--ink3)">ราคา/ต้น (บาท)</div>
+            <input type="text" inputmode="decimal" class="finput" id="tfRate_${i}" value="${has ? jobNum(e.amount / e.trees) : ''}" placeholder="เช่น 0.1" style="padding:6px 8px;font-size:.82rem;width:100%;border-radius:8px" oninput="treeFixLink(${i},'rate')"></div>
+        </div>
+        <div id="tfChk2_${i}" style="font-size:.7rem;margin-top:3px"></div>
+      </div>
+    </div>`;
+  }).join('');
+  treeFixPreview();
+  closeModal('jtsModal');
+  openModal('treeFixModal');
+}
+
+// แก้ช่องหนึ่ง อีกช่องคิดให้ (ยอดเงินคงที่)
+function treeFixLink(i, from) {
+  const e = (window.__treeFix || {}).list[i];
+  if (!e) return;
+  const treeEl = document.getElementById(`tfTree_${i}`), rateEl = document.getElementById(`tfRate_${i}`);
+  if (from === 'tree') {
+    const t = evalMathInput(treeEl.value);
+    rateEl.value = Number.isFinite(t) && t > 0 ? jobNum(e.amount / t) : '';
+  } else {
+    const r = evalMathInput(rateEl.value);
+    treeEl.value = Number.isFinite(r) && r > 0 ? jobNum(Math.round(e.amount / r * 100) / 100) : '';
+  }
+  const chk = document.getElementById(`tfChk_${i}`);
+  if (chk && evalMathInput(treeEl.value) > 0) chk.checked = true;
+  treeFixPreview();
+}
+
+// v130: ใส่ราคา/ต้นเดียวกันให้ทุกรายการ "เงินก้อน" ทีเดียว (เช่น 0.45 = 45 สตางค์) — ระบบคิดจำนวนต้น = เงิน ÷ ราคา
+function treeFixBulkRate() {
+  const raw = (document.getElementById('tfBulkRate')?.value || '').trim();
+  let r = evalMathInput(raw);
+  if (!Number.isFinite(r) || !(r > 0)) return toast('⚠️ ใส่ราคา/ต้นก่อน เช่น 0.45');
+  if (r >= 1 && r <= 100 && !raw.includes('.')) r = r / 100;   // พิมพ์ 45 = 45 สตางค์
+  let n = 0;
+  ((window.__treeFix || {}).list || []).forEach((e, i) => {
+    if (e.kind !== 'C') return;
+    const el = document.getElementById(`tfRate_${i}`);
+    if (!el) return;
+    el.value = jobNum(r); treeFixLink(i, 'rate'); n++;
+  });
+  document.getElementById('tfBulkRate').value = jobNum(r);
+  toast(n ? `✅ ใส่ราคา ${jobNum(r)} บาท/ต้น ให้ ${n} รายการเงินก้อนแล้ว — ตรวจแล้วกดบันทึก` : 'ℹ️ ไม่มีรายการเงินก้อน');
+}
+
+function treeFixSelectAll(on) {
+  ((window.__treeFix || {}).list || []).forEach((e, i) => { const c = document.getElementById(`tfChk_${i}`); if (c) c.checked = on; });
+  treeFixPreview();
+}
+
+function treeFixPreview() {
+  const ctx = window.__treeFix || {}; const list = ctx.list || [];
+  let sel = 0, trees = 0, miss = 0;
+  list.forEach((e, i) => {
+    const t = evalMathInput(document.getElementById(`tfTree_${i}`)?.value);
+    const ok = Number.isFinite(t) && t > 0;
+    const msg = document.getElementById(`tfChk2_${i}`);
+    if (msg) msg.innerHTML = ok
+      ? `<span style="color:#15803d">→ ใหม่: ${jdEscHtml(ctx.job)} ${formatCalcNumber(t)} ต้น × ${jobNum(e.amount / t)} = ฿${e.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
+      : '<span style="color:#b45309">⚠️ ยังไม่ได้ใส่จำนวนต้น</span>';
+    if (!document.getElementById(`tfChk_${i}`)?.checked) return;
+    sel++;
+    if (ok) trees += t; else miss++;
+  });
+  const el = document.getElementById('treeFixSummary');
+  if (el) el.innerHTML = sel
+    ? `เลือก ${sel} รายการ · รวมต้นที่จะบันทึก <b>${formatCalcNumber(trees)} ต้น</b> · ยอดเงินไม่เปลี่ยน` + (miss ? `<br><span style="color:#b45309">⚠️ ${miss} รายการยังไม่ใส่จำนวนต้น — จะข้ามไป</span>` : '')
+    : '<span style="color:var(--ink3)">ยังไม่ได้เลือก</span>';
+}
+
+function saveTreeFix() {
+  const ctx = window.__treeFix || {}; const list = ctx.list || [];
+  const jobs = [];
+  list.forEach((e, i) => {
+    if (!document.getElementById(`tfChk_${i}`)?.checked) return;
+    const t = evalMathInput(document.getElementById(`tfTree_${i}`)?.value);
+    if (Number.isFinite(t) && t > 0) jobs.push({ e, t });
+  });
+  if (!jobs.length) return toast('⚠️ ยังไม่มีรายการที่บันทึกได้ (ติ๊กเลือก และใส่จำนวนต้น)');
+  requirePin(`บันทึกจำนวนต้น${ctx.job} ${jobs.length} รายการ`, () => {
+    const touched = new Set(); let done = 0;
+    jobs.forEach(({ e, t }) => {
+      const w = workers.find(x => x.id == e.wid);
+      const h = w && (w.history || []).find(x => x.id == e.id);
+      if (!h) return;
+      if (!h.origDetail) h.origDetail = h.detail || '';
+      {
+        // ยอดเงิน (h.amount) ไม่แตะ
+        h.workType = ctx.job;
+        h.qty = t;
+        delete h.realQty;
+        h.detail = `${ctx.job} ${jobNum(t)} × ${jobNum(Number(h.amount || 0) / t)}`;
+      }
+      const p = (w.pending || []).find(x => x.id == h.id);
+      if (p) { p.workType = h.workType; p.qty = h.qty; p.detail = h.detail; if (h.realQty) p.realQty = h.realQty; else delete p.realQty; }
+      touched.add(w); done++;
+    });
+    touched.forEach(w => recalcWorker(w));
+    renderAll();
+    saveData();
+    closeModal('treeFixModal');
+    toast(`✅ บันทึกจำนวนต้น ${done} รายการ · ยอดเงินเท่าเดิม`);
   });
 }
 
@@ -7091,7 +7336,7 @@ function renderTransportRounds() {
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px">
           <div style="flex:1">
-            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%)</label>
+            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%) = สตางค์/ต้น</label>
             <input type="number" step="0.1" min="0" max="100" class="finput" value="${r.percent}" oninput="updateTransportPercent(${idx}, this.value); calcTransportSummary()">
           </div>
           <div style="flex:1">
@@ -7175,7 +7420,8 @@ function confirmTransportSave() {
     usableRounds.forEach(r => {
       const actualMoney = round2(((r.percent || 0) / 100) * (r.money || 0));
       const _shares = splitMoney(actualMoney, r.selected.length);
-      const perQty = (r.qty || 0) / r.selected.length;
+      // v128: ขนยาง — ช่อง "🌱 จำนวนต้น" ของรอบคือจำนวนต้นจริง (% = สตางค์/ต้น) นับต้นของแต่ละคน = ต้นทั้งรอบ ÷ จำนวนคน
+      const perQty = ((r.money > 0 ? r.money : r.qty) || 0) / r.selected.length;
 
       r.selected.forEach((wid, _si) => {
         const perPerson = _shares[_si];
@@ -7187,10 +7433,12 @@ function confirmTransportSave() {
           date: thaiDateStr(),
           type: 'piece',
           amount: perPerson,
-          detail: `ขนยาง รอบที่ ${r.id} (${r.percent}% ของ ${r.money.toFixed(2)} บาท ÷ ${r.selected.length} คน)` + (r.qty > 0 ? ` · ${formatCalcNumber(r.qty)}` : ''),
+          // v129: รูปแบบใหม่ จำนวนต้น × ราคา/ต้น (ต้นของคนนี้ = ต้นทั้งรอบ ÷ จำนวนคน, ราคา = % เป็นสตางค์)
+          detail: (perQty > 0
+            ? `ขนยาง ${jobNum(perQty)} × ${jobNum((r.percent || 0) / 100)}`
+            : `ขนยาง รอบที่ ${r.id} (${r.percent}% ของ ${r.money.toFixed(2)} บาท ÷ ${r.selected.length} คน)`) + (r.qty > 0 ? ` · ${formatCalcNumber(r.qty)} เที่ยว` : ''),
           workType: 'ขนยาง',
-          qty: 1,
-          realQty: perQty
+          qty: perQty > 0 ? perQty : 1
         };
         w.history.push(item);
         w.pending.push({ ...item });
@@ -8047,12 +8295,12 @@ function renderRootRounds() {
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px">
           <div style="flex:1">
-            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%)</label>
+            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%) = สตางค์/ต้น</label>
             <input type="number" step="0.1" min="0" max="100" class="finput" value="${r.percent}" oninput="updateRootPercent(${idx}, this.value); calcRootSummary()">
           </div>
           <div style="flex:1">
-            <label style="font-size:.72rem;color:var(--ink2)">💰 ยอดเงินทั้งรอบ (บาท)</label>
-            <input type="text" inputmode="decimal" class="finput" value="${money || ''}" placeholder="บาท (พิมพ์ +-*/ ได้)" oninput="updateRootMoney(${idx}, this.value); calcRootSummary()" onblur="finalizeRootMoneyInput(${idx}, this)">
+            <label style="font-size:.72rem;color:var(--ink2)">🌳 จำนวนต้นทั้งรอบ</label>
+            <input type="text" inputmode="decimal" class="finput" value="${money || ''}" placeholder="จำนวนต้น (พิมพ์ +-*/ ได้)" oninput="updateRootMoney(${idx}, this.value); calcRootSummary()" onblur="finalizeRootMoneyInput(${idx}, this)">
           </div>
         </div>
         <div style="margin-bottom:6px">
@@ -8136,7 +8384,8 @@ function confirmRootSave(payNow) {
     usableRounds.forEach(r => {
       const actualMoney = round2(((r.percent || 0) / 100) * (r.money || 0));
       const _shares = splitMoney(actualMoney, r.selected.length);
-      const perQty = (r.qty || 0) / r.selected.length;
+      // v126: ตัดรากยาง — แม่ใส่ "จำนวนต้น" ในช่องยอด และ % = สตางค์ต่อต้น ถ้าไม่ได้กรอกจำนวนที่นับได้ ให้นับต้นจากช่องยอด
+      const perQty = ((r.qty > 0 ? r.qty : r.money) || 0) / r.selected.length;
 
       r.selected.forEach((wid, _si) => {
         const perPerson = _shares[_si];
@@ -8319,12 +8568,12 @@ function renderGraftRounds() {
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px">
           <div style="flex:1">
-            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%)</label>
+            <label style="font-size:.72rem;color:var(--ink2)">ร้อยละ (%) = สตางค์/ต้น</label>
             <input type="number" step="0.1" min="0" max="100" class="finput" value="${r.percent}" oninput="updateGraftPercent(${idx}, this.value); calcGraftSummary()">
           </div>
           <div style="flex:1">
-            <label style="font-size:.72rem;color:var(--ink2)">💰 ยอดเงินทั้งรอบ (บาท)</label>
-            <input type="text" inputmode="decimal" class="finput" value="${money || ''}" placeholder="บาท (พิมพ์ +-*/ ได้)" oninput="updateGraftMoney(${idx}, this.value); calcGraftSummary()" onblur="finalizeGraftMoneyInput(${idx}, this)">
+            <label style="font-size:.72rem;color:var(--ink2)">🌳 จำนวนต้นทั้งรอบ</label>
+            <input type="text" inputmode="decimal" class="finput" value="${money || ''}" placeholder="จำนวนต้น (พิมพ์ +-*/ ได้)" oninput="updateGraftMoney(${idx}, this.value); calcGraftSummary()" onblur="finalizeGraftMoneyInput(${idx}, this)">
           </div>
         </div>
         <div style="margin-bottom:6px">
@@ -8408,7 +8657,8 @@ function confirmGraftSave(payNow) {
     usableRounds.forEach(r => {
       const actualMoney = round2(((r.percent || 0) / 100) * (r.money || 0));
       const _shares = splitMoney(actualMoney, r.selected.length);
-      const perQty = (r.qty || 0) / r.selected.length;
+      // v127: เสียบยาง — ช่องยอดคือจำนวนต้น (% = สตางค์/ต้น) ถ้าไม่ได้กรอกจำนวนที่นับได้ ให้นับต้นจากช่องนี้
+      const perQty = ((r.qty > 0 ? r.qty : r.money) || 0) / r.selected.length;
 
       r.selected.forEach((wid, _si) => {
         const perPerson = _shares[_si];
@@ -16013,4 +16263,165 @@ function toggleHistoryExpanded(force) {
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape' && !document.querySelector('.modal-bg.on')) toggleHistoryExpanded(false);
 });
+</script>
+<style>
+.thdp-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left;font-family:inherit;min-width:150px;white-space:nowrap}
+.thdp-btn .thdp-ic{opacity:.7}
+.thdp-btn.thdp-empty .thdp-tx{color:var(--ink3)}
+input.thdp-native{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;pointer-events:none!important}
+.thdp-pop{position:fixed;z-index:100000;background:#fff;border:1px solid #d6dbe6;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.25);padding:10px;width:286px;font-family:'Sarabun','Mitr',sans-serif;color:#1f2937}
+.thdp-head{display:flex;align-items:center;gap:4px;margin-bottom:6px}
+.thdp-head select{flex:1;padding:5px 6px;border:1px solid #d6dbe6;border-radius:8px;font-family:inherit;font-size:.86rem;background:#f8fafc}
+.thdp-nav{border:none;background:#eef2ff;color:#3730a3;border-radius:8px;width:30px;height:30px;font-size:1rem;cursor:pointer}
+.thdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.thdp-dow{font-size:.72rem;color:#64748b;font-weight:700;padding:3px 0}
+.thdp-dow.sun{color:#dc2626}
+.thdp-day{border:none;background:none;border-radius:8px;padding:6px 0;font-size:.86rem;cursor:pointer;font-family:inherit;color:#1f2937}
+.thdp-day:hover{background:#eef2ff}
+.thdp-day.out{color:#cbd5e1}
+.thdp-day.today{outline:1.5px solid #6366f1}
+.thdp-day.sel{background:#4f46e5;color:#fff;font-weight:700}
+.thdp-day.inrange{background:#e0e7ff}
+.thdp-day:disabled{color:#e2e8f0;cursor:not-allowed;background:none}
+.thdp-foot{display:flex;justify-content:space-between;margin-top:8px;gap:6px}
+.thdp-foot button{flex:1;border:none;border-radius:8px;padding:6px;font-family:inherit;font-size:.82rem;cursor:pointer;background:#f1f5f9;color:#334155}
+.thdp-foot button.pri{background:#4f46e5;color:#fff}
+.thdp-chip{border:1px solid var(--border,#e5e7eb);background:var(--bg,#f8fafc);color:var(--ink2,#334155);border-radius:999px;padding:4px 11px;font-size:.76rem;cursor:pointer;font-family:inherit}
+.thdp-chip:hover{border-color:#6366f1;color:#4338ca}
+</style>
+<script>
+// v131: ปฏิทินภาษาไทย — แสดงวันที่เป็น พ.ศ. ชื่อเดือนไทย ใช้กับ <input type="date"> ทุกช่อง (ค่าที่เก็บยังเป็น YYYY-MM-DD เหมือนเดิม)
+var THDP_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+var THDP_MSHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+var THDP_DOW = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+var _thdpPop = null, _thdpInput = null, _thdpView = null;
+var _thdpValDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+function thdpParse(v) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function thdpISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function thdpLabel(v) {
+  var d = thdpParse(v);
+  return d ? d.getDate() + ' ' + THDP_MSHORT[d.getMonth()] + ' ' + (d.getFullYear() + 543) : 'เลือกวันที่';
+}
+function thdpRefresh(inp) {
+  var b = inp && inp._thdpBtn;
+  if (!b) return;
+  var v = _thdpValDesc.get.call(inp);
+  b.querySelector('.thdp-tx').textContent = thdpLabel(v);
+  b.classList.toggle('thdp-empty', !v);
+  var hidden = inp.style.display === 'none' || inp.hidden;
+  b.style.display = hidden ? 'none' : '';
+  b.disabled = !!inp.disabled;
+}
+function thdpEnhance(inp) {
+  if (!inp || inp._thdpBtn || inp.type !== 'date') return;
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = (inp.className || '') + ' thdp-btn';
+  b.style.cssText = inp.style.cssText;
+  b.innerHTML = '<span class="thdp-tx"></span><span class="thdp-ic">📅</span>';
+  b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); thdpOpen(inp); });
+  inp.parentNode.insertBefore(b, inp.nextSibling);
+  inp._thdpBtn = b;
+  inp.classList.add('thdp-native');
+  // ค่าที่โค้ดเดิมตั้งด้วย el.value = ... ให้ป้ายภาษาไทยอัปเดตตาม
+  Object.defineProperty(inp, 'value', {
+    configurable: true,
+    get: function () { return _thdpValDesc.get.call(this); },
+    set: function (v) { _thdpValDesc.set.call(this, v); thdpRefresh(this); }
+  });
+  new MutationObserver(function () { thdpRefresh(inp); }).observe(inp, { attributes: true, attributeFilter: ['style', 'hidden', 'disabled'] });
+  inp.addEventListener('change', function () { thdpRefresh(inp); });
+  thdpRefresh(inp);
+}
+function thdpClose() {
+  if (_thdpPop) { _thdpPop.remove(); _thdpPop = null; _thdpInput = null; }
+}
+function thdpOpen(inp) {
+  if (_thdpInput === inp) { thdpClose(); return; }
+  thdpClose();
+  _thdpInput = inp;
+  var cur = thdpParse(inp.value) || new Date();
+  _thdpView = new Date(cur.getFullYear(), cur.getMonth(), 1);
+  _thdpPop = document.createElement('div');
+  _thdpPop.className = 'thdp-pop';
+  _thdpPop.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+  _thdpPop.addEventListener('click', function (e) { e.stopPropagation(); });
+  document.body.appendChild(_thdpPop);
+  thdpRender();
+  var r = inp._thdpBtn.getBoundingClientRect();
+  var top = r.bottom + 6, left = r.left;
+  var ph = _thdpPop.offsetHeight, pw = _thdpPop.offsetWidth;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+  if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - pw - 8);
+  _thdpPop.style.top = top + 'px';
+  _thdpPop.style.left = left + 'px';
+}
+// ช่วงที่จับคู่กันไว้ (ตั้งแต่/ถึง) เพื่อระบายสีช่วงวันในปฏิทิน
+var THDP_PAIRS = { jtsStartDate: 'jtsEndDate', jtsEndDate: 'jtsStartDate', jobDashFrom: 'jobDashTo', jobDashTo: 'jobDashFrom' };
+function thdpRender() {
+  if (!_thdpPop || !_thdpInput) return;
+  var inp = _thdpInput, v = _thdpView;
+  var sel = inp.value, today = thdpISO(new Date());
+  var mate = THDP_PAIRS[inp.id] ? document.getElementById(THDP_PAIRS[inp.id]) : null;
+  var a = sel, z = mate ? mate.value : '';
+  var lo = a && z ? (a < z ? a : z) : '', hi = a && z ? (a < z ? z : a) : '';
+  var minV = inp.min || '', maxV = inp.max || '';
+  var yNow = new Date().getFullYear();
+  var yOpts = '';
+  for (var y = yNow - 6; y <= yNow + 2; y++) yOpts += '<option value="' + y + '"' + (y === v.getFullYear() ? ' selected' : '') + '>พ.ศ. ' + (y + 543) + '</option>';
+  var mOpts = THDP_MONTHS.map(function (n, i) { return '<option value="' + i + '"' + (i === v.getMonth() ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+  var html = '<div class="thdp-head"><button type="button" class="thdp-nav" onclick="thdpMove(-1)">‹</button>'
+    + '<select onchange="thdpSetMonth(this.value)">' + mOpts + '</select>'
+    + '<select onchange="thdpSetYear(this.value)">' + yOpts + '</select>'
+    + '<button type="button" class="thdp-nav" onclick="thdpMove(1)">›</button></div><div class="thdp-grid">';
+  THDP_DOW.forEach(function (d, i) { html += '<div class="thdp-dow' + (i === 0 ? ' sun' : '') + '">' + d + '</div>'; });
+  var start = new Date(v.getFullYear(), v.getMonth(), 1 - v.getDay());
+  for (var k = 0; k < 42; k++) {
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + k);
+    var iso = thdpISO(d), cls = 'thdp-day';
+    if (d.getMonth() !== v.getMonth()) cls += ' out';
+    if (iso === today) cls += ' today';
+    if (iso === sel) cls += ' sel';
+    else if (lo && iso >= lo && iso <= hi) cls += ' inrange';
+    var dis = (minV && iso < minV) || (maxV && iso > maxV);
+    html += '<button type="button" class="' + cls + '"' + (dis ? ' disabled' : '') + ' onclick="thdpPick(\'' + iso + '\')">' + d.getDate() + '</button>';
+  }
+  html += '</div><div class="thdp-foot"><button type="button" onclick="thdpPick(\'' + today + '\')">วันนี้</button>'
+    + '<button type="button" onclick="thdpClose()">ปิด</button></div>';
+  _thdpPop.innerHTML = html;
+}
+function thdpMove(n) { _thdpView = new Date(_thdpView.getFullYear(), _thdpView.getMonth() + n, 1); thdpRender(); }
+function thdpSetMonth(m) { _thdpView = new Date(_thdpView.getFullYear(), +m, 1); thdpRender(); }
+function thdpSetYear(y) { _thdpView = new Date(+y, _thdpView.getMonth(), 1); thdpRender(); }
+function thdpPick(iso) {
+  var inp = _thdpInput;
+  if (!inp) return;
+  thdpClose();
+  inp.value = iso;
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+}
+document.addEventListener('mousedown', function () { thdpClose(); });
+window.addEventListener('resize', thdpClose);
+document.addEventListener('scroll', function (e) { if (_thdpPop && !_thdpPop.contains(e.target)) thdpClose(); }, true);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && _thdpPop) { e.stopPropagation(); thdpClose(); } }, true);
+function thdpEnhanceAll(root) {
+  (root || document).querySelectorAll('input[type="date"]').forEach(thdpEnhance);
+}
+thdpEnhanceAll();
+new MutationObserver(function (muts) {
+  muts.forEach(function (m) {
+    m.addedNodes.forEach(function (n) {
+      if (n.nodeType !== 1) return;
+      if (n.matches && n.matches('input[type="date"]')) thdpEnhance(n);
+      else if (n.querySelectorAll) thdpEnhanceAll(n);
+    });
+  });
+}).observe(document.body, { childList: true, subtree: true });
 </script>
