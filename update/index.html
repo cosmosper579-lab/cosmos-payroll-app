@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v141">
-<title>💰 จ่ายเงินคนงาน PRO v141</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v142">
+<title>💰 จ่ายเงินคนงาน PRO v142</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1008,7 +1008,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v141 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v142 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1862,6 +1862,7 @@ body::before{
     <div class="set-sec">🔄 นำเข้า / ส่งออก</div>
     <div class="set-grid">
       <button class="set-item" onclick="settingsRun(()=>document.getElementById('buddingImportInput').click())"><i>🌱</i><span><b>นำเข้าติดตายาง</b><small>รวมข้อมูลจากระบบติดตายาง</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>openUndoDedModal())"><i>↩️</i><span><b>ยกเลิกการหักล่วงหน้า</b><small>คืนยอดล่วงหน้าให้ค้างเหมือนเดิม (เลือกช่วงวันที่)</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>openJobFixModal())"><i>🔧</i><span><b>จัดรูปแบบงานเหมา</b><small>ทุกประเภท: ชื่อพิมพ์ผิด/บันทึกแบบเก่า ให้ค้นหาได้</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>downloadCSV())"><i>📤</i><span><b>Export</b><small>ส่งออกประวัติเป็นไฟล์ CSV</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>exportWorkersExcel())"><i>📊</i><span><b>Excel</b><small>ส่งออกรายชื่อและยอดคนงาน</small></span></button>
@@ -17231,4 +17232,115 @@ function uiAlert(msg) { return new Promise(function (res) { _uiDlgQ.push({ msg: 
 window.alert = function (m) { uiAlert(m); };
 // กันพลาด: ถ้าหน้าต่างกลับมาโฟกัสแต่ไม่มีอะไรโฟกัสอยู่ ให้โฟกัสหน้าเว็บ
 window.addEventListener('focus', function () { try { if (!document.activeElement || document.activeElement === document.body) document.body.focus(); } catch (e) {} });
+</script>
+<!-- v142: ยกเลิกการหักล่วงหน้า — รายการจ่ายที่เคย "หักล่วงหน้า" แทนเงินสด กลับเป็นไม่หัก
+     ผล: ล่วงหน้ากลับมาค้างเท่าเดิม · ค่าแรงส่วนที่เคยใช้หักกลับเป็น "ยังค้างจ่าย" · เงินสดที่จ่ายไปจริงไม่เปลี่ยน -->
+<div class="modal-bg" id="undoDedModal" onclick="if(event.target===this)closeModal('undoDedModal')">
+  <div class="modal" style="max-width:600px">
+    <h2>↩️ ยกเลิกการหักล่วงหน้า</h2>
+    <div style="font-size:.76rem;color:var(--ink3);text-align:center;margin-bottom:8px">รายการจ่ายที่เคย <b>หักล่วงหน้า</b> จะกลับเป็น <b>ไม่หัก</b> → ล่วงหน้ากลับมาค้างเท่าเดิม<br>ค่าแรงส่วนที่เคยใช้หัก กลับเป็น "ยังค้างจ่าย" · <b style="color:#15803d">เงินสดที่จ่ายไปจริงไม่เปลี่ยน</b></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      <span style="font-size:.8rem;font-weight:600">วันที่หัก ตั้งแต่</span>
+      <input type="date" class="dash-input" id="udFrom" onchange="udRender()">
+      <span style="font-size:.8rem;font-weight:600">ถึง</span>
+      <input type="date" class="dash-input" id="udTo" onchange="udRender()">
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button type="button" class="thdp-chip" onclick="udPreset('before18')">ก่อน 18 พ.ย. 2569</button>
+      <button type="button" class="thdp-chip" onclick="udPreset('since18')">ตั้งแต่ 18 พ.ย. 2569</button>
+      <button type="button" class="thdp-chip" onclick="udPreset('all')">ทั้งหมด</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:6px;font-size:.76rem">
+      <span style="cursor:pointer;color:var(--blue)" onclick="udSelectAll(true)">✅ เลือกทั้งหมด</span>
+      <span style="cursor:pointer;color:var(--ink3)" onclick="udSelectAll(false)">⬜ ไม่เลือกเลย</span>
+    </div>
+    <div id="udBody" style="max-height:46vh;overflow:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+    <div id="udSummary" style="text-align:center;font-family:'Mitr';font-weight:700;font-size:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="m-save" onclick="udSave()">↩️ ยกเลิกการหักที่เลือก</button>
+      <button class="m-cancel" onclick="closeModal('undoDedModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+<script id="undo-ded-v142-js">
+var _udList = [];
+function udPreset(k) {
+  var f = document.getElementById('udFrom'), t = document.getElementById('udTo');
+  if (k === 'before18') { f.value = '2020-01-01'; t.value = '2026-11-17'; }
+  else if (k === 'since18') { f.value = '2026-11-18'; t.value = localISO(); }
+  else { f.value = '2020-01-01'; t.value = localISO(); }
+  udRender();
+}
+function udCollect() {
+  var from = document.getElementById('udFrom').value || '2000-01-01', to = document.getElementById('udTo').value || localISO();
+  var out = [];
+  (workers || []).forEach(function (w) {
+    if (w.id == OWNER_ID) return;
+    (w.history || []).forEach(function (h) {
+      if (h.type !== 'withdraw') return;
+      var d = round2(Number(h.deducted) || 0);
+      if (d <= 0.004) return;
+      var iso = localISO(new Date(h.ts || 0));
+      if (iso < from || iso > to) return;
+      out.push({ w: w, h: h, d: d, cash: round2(Math.abs(Number(h.amount) || 0)), iso: iso });
+    });
+  });
+  return out.sort(function (a, b) { return (b.h.ts || 0) - (a.h.ts || 0); });
+}
+function openUndoDedModal() {
+  if (!document.getElementById('udFrom').value) { udPreset('before18'); } else udRender();
+  openModal('undoDedModal');
+}
+function udRender() {
+  _udList = udCollect();
+  var box = document.getElementById('udBody');
+  if (!_udList.length) { box.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:20px;font-size:.88rem">ไม่มีรายการที่หักล่วงหน้าในช่วงนี้ ✅</div>'; udSum(); return; }
+  box.innerHTML = _udList.map(function (e, i) {
+    var w = e.w;
+    return '<label style="display:flex;gap:8px;align-items:flex-start;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer">'
+      + '<input type="checkbox" id="udChk_' + i + '" checked onchange="udSum()" style="margin-top:4px;width:17px;height:17px">'
+      + '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:6px"><b>' + (w.emoji || '👤') + ' ' + jdEscHtml(w.name) + '</b><b style="font-family:Mitr;color:#dc2626">หัก ' + formatMoney(e.d) + '</b></div>'
+      + '<div style="font-size:.74rem;color:var(--ink3)">' + jdEscHtml(e.h.date || e.iso) + ' · จ่ายเงินสด ' + formatMoney(e.cash) + ' · ' + jdEscHtml(e.h.detail || 'เบิก/จ่าย') + '</div>'
+      + '<div style="font-size:.72rem;color:#b45309">ล่วงหน้าค้างตอนนี้ ' + formatMoney(w.advanceOwed || 0) + ' → หลังยกเลิก ' + formatMoney(round2((w.advanceOwed || 0) + e.d)) + '</div></div></label>';
+  }).join('');
+  udSum();
+}
+function udSelectAll(on) { _udList.forEach(function (e, i) { var c = document.getElementById('udChk_' + i); if (c) c.checked = on; }); udSum(); }
+function udSum() {
+  var n = 0, d = 0, people = {};
+  _udList.forEach(function (e, i) { if (document.getElementById('udChk_' + i)?.checked) { n++; d += e.d; people[e.w.id] = 1; } });
+  document.getElementById('udSummary').innerHTML = n ? ('เลือก ' + n + ' รายการ · ' + Object.keys(people).length + ' คน · ล่วงหน้ากลับมาค้างเพิ่ม <span style="color:#dc2626">' + formatMoney(round2(d)) + '</span> · เงินสดไม่เปลี่ยน') : '<span style="color:var(--ink3);font-weight:400">ยังไม่ได้เลือก</span>';
+}
+// ยกเลิกการหักของรายการจ่ายหนึ่งรายการ: deducted → 0 และลดยอดที่ปิดค่าแรง (appliedTo) ลงเท่าที่หัก (ลดจากรายการท้ายก่อน)
+function udUndoOne(w, h) {
+  var d = round2(Number(h.deducted) || 0);
+  if (d <= 0.004) return 0;
+  var left = d;
+  if (Array.isArray(h.appliedTo)) {
+    for (var k = h.appliedTo.length - 1; k >= 0 && left > 0.004; k--) {
+      var a = h.appliedTo[k], cut = Math.min(Number(a.appliedAmt) || 0, left);
+      a.appliedAmt = round2((Number(a.appliedAmt) || 0) - cut); left = round2(left - cut);
+    }
+    h.appliedTo = h.appliedTo.filter(function (a) { return (Number(a.appliedAmt) || 0) > 0.004; });
+  }
+  h.undoDeducted = round2((Number(h.undoDeducted) || 0) + d);   // เก็บไว้ตรวจย้อนหลัง
+  h.deducted = 0;
+  // รายการที่เป็นการหักล้วน ๆ (เงินสด 0) → ลบออก
+  if (Math.abs(Number(h.amount) || 0) <= 0.004) w.history = w.history.filter(function (x) { return x !== h; });
+  return d;
+}
+async function udSave() {
+  var jobs = _udList.filter(function (e, i) { return document.getElementById('udChk_' + i)?.checked; });
+  if (!jobs.length) return toast('⚠️ ยังไม่ได้เลือกรายการ');
+  var total = round2(jobs.reduce(function (s, e) { return s + e.d; }, 0));
+  if (!await uiConfirm('ยกเลิกการหักล่วงหน้า ' + jobs.length + ' รายการ รวม ' + formatMoney(total) + ' ?\n\nล่วงหน้าจะกลับมาค้างเท่าเดิม และค่าแรงส่วนนั้นกลับเป็นยังค้างจ่าย\nเงินสดที่จ่ายไปจริงไม่เปลี่ยน')) return;
+  requirePin('ยกเลิกการหักล่วงหน้า ' + jobs.length + ' รายการ', function () {
+    var touched = new Set(), done = 0;
+    jobs.forEach(function (e) { if (udUndoOne(e.w, e.h) > 0) { touched.add(e.w); done++; } });
+    touched.forEach(function (w) { recalcWorker(w); });
+    renderAll(); saveData();
+    udRender();
+    toast('↩️ ยกเลิกการหักล่วงหน้าแล้ว ' + done + ' รายการ · ล่วงหน้ากลับมาค้าง ' + formatMoney(total));
+  });
+}
 </script>
