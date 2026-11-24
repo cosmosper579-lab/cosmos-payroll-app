@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v135">
-<title>💰 จ่ายเงินคนงาน PRO v135</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v136">
+<title>💰 จ่ายเงินคนงาน PRO v136</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1004,7 +1004,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v135 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v136 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -16905,11 +16905,69 @@ function drShift(n) {
   var iso = localISO(d); if (iso > localISO()) return;
   drGo(iso);
 }
+// v136: ติ๊ก "จ่ายแล้ว" = บันทึกเงินออกจริง (เบิก/จ่าย) ของค่าแรงวันนั้นที่ยังไม่ได้จ่าย → ขึ้นใน "เบิกเงินวันนี้" ด้วย
+// ใช้ payItemNow() เดิม (สูตรเดียวกับปุ่ม "บันทึก + จ่ายเงินเลย" ทุกที่ — หักเงินล่วงหน้าที่ค้างให้อัตโนมัติ)
+// เอาติ๊กออก = ลบรายการเบิก/จ่ายที่ติ๊กนี้สร้าง ยอดค้างกลับเป็นเหมือนเดิม
+function drTickInfo(v) { return v && typeof v === 'object' ? v : (v ? { ts: v, wids: [] } : null); }
+function drUnpaidItems(w, iso) {
+  var out = [];
+  (w.history || []).forEach(function (h) {
+    if (!LEDGER_EARN[h.type] || localISO(new Date(h.ts || 0)) !== iso) return;
+    var p = (w.pending || []).find(function (x) { return String(x.id) === String(h.id); });
+    var rem = p ? round2(Number(p.amount) || 0) : 0;
+    if (rem > 0.004) out.push({ h: h, rem: rem });
+  });
+  return out;
+}
+function drPayDay(w, iso) {
+  recalcWorker(w);
+  var items = drUnpaidItems(w, iso), wids = [], amt = 0, ded = 0;
+  var dstr = thaiDateStr(new Date(iso + 'T12:00:00'));
+  items.forEach(function (it) {
+    var before = (w.history || []).length;
+    var r = payItemNow(w, { id: it.h.id, ts: it.h.ts, date: it.h.date, type: it.h.type, detail: it.h.detail, amount: it.rem }, 'จ่ายค่าแรง (รายวันวันนี้)', dstr);
+    if ((w.history || []).length > before) wids.push(w.history[w.history.length - 1].id);
+    amt += r.amt; ded += r.deduct;
+  });
+  return { wids: wids, amt: round2(amt), ded: round2(ded), n: items.length };
+}
 function drToggle(wid, ev) {
   if (ev) ev.stopPropagation();
-  var m = drPaidMap(), day = m[drDay] || {};
-  if (day[wid]) delete day[wid]; else day[wid] = Date.now();
-  m[drDay] = day; drSavePaid(m);
+  var w = (workers || []).find(function (x) { return String(x.id) === String(wid); });
+  if (!w) return;
+  var m = drPaidMap(), day = m[drDay] || {}, info = drTickInfo(day[wid]);
+  var unpaid = drUnpaidItems(w, drDay), unpaidSum = round2(unpaid.reduce(function (s, it) { return s + it.rem; }, 0));
+  if (!info || (info && !info.wids.length && unpaid.length)) {
+    // ติ๊กจ่าย (หรือเคยติ๊กแบบเก่าที่ยังไม่ได้บันทึกเงินออก)
+    if (unpaid.length) {
+      var adv = Number(w.advanceOwed || 0);
+      var msg = 'จ่ายเงิน ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังไม่จ่าย)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้'
+        + (adv > 0 ? '\n⚠️ มีเงินล่วงหน้าค้าง ' + formatMoney(adv) + ' ระบบจะหักให้ก่อนตามปกติ' : '');
+      if (!confirm(msg)) return;
+      var r = drPayDay(w, drDay);
+      day[wid] = { ts: Date.now(), wids: r.wids, amt: r.amt, ded: r.ded };
+      m[drDay] = day; drSavePaid(m);
+      renderAll(); saveData();
+      toast('💵 จ่าย ' + w.name + ' ' + formatMoney(r.amt) + (r.ded > 0 ? ' · หักล่วงหน้า ' + formatMoney(r.ded) : '') + ' — ขึ้นในเบิกเงินวันนี้แล้ว');
+    } else {
+      // ค่าแรงวันนี้จ่ายไปแล้ว (เช่น กด "บันทึก + จ่ายเงินเลย" ตอนคีย์) — ติ๊กไว้ดูอย่างเดียว
+      day[wid] = { ts: Date.now(), wids: [], already: true };
+      m[drDay] = day; drSavePaid(m);
+      toast('✅ ' + w.name + ' จ่ายไปแล้วตอนบันทึก — ติ๊กไว้ให้');
+    }
+  } else {
+    // เอาติ๊กออก → ลบรายการจ่ายที่ติ๊กนี้สร้าง
+    if (info.wids.length) {
+      var made = (w.history || []).filter(function (h) { return info.wids.some(function (id) { return String(id) === String(h.id); }); });
+      var back = round2(made.reduce(function (s, h) { return s + Math.abs(Number(h.amount) || 0); }, 0));
+      if (!confirm('เอาติ๊ก "จ่ายแล้ว" ของ ' + w.name + ' ออก?\nจะลบรายการเบิก/จ่าย ' + formatMoney(back) + ' ที่ติ๊กนี้บันทึกไว้ ยอดค้างจะกลับเป็นเหมือนเดิม')) return;
+      w.history = (w.history || []).filter(function (h) { return !made.includes(h); });
+      recalcWorker(w);
+      renderAll(); saveData();
+    }
+    delete day[wid];
+    m[drDay] = day; drSavePaid(m);
+  }
   drRender(); drUpdateBadge();
 }
 function drOpenWorker(wid, ev) {
@@ -16943,16 +17001,21 @@ function drRender() {
   if (!list.length) { box.innerHTML = '<div class="dr-empty">ไม่พบรายชื่อที่ค้นหา</div>'; return; }
   box.innerHTML = list.map(function (r) {
     var w = r.w, isPaid = !!paid[w.id];
+    var tinfo = drTickInfo(paid[w.id]);
+    var stillOwe = isPaid && tinfo && !tinfo.wids.length && !tinfo.already && drUnpaidItems(w, iso).length;
     var av = w.photo ? '<img class="w-photo" src="' + w.photo + '" alt="">' : (w.emoji || '👤');
     var lines = r.items.map(function (h) { return '<div class="ln">• ' + jdEscHtml(drItemText(h)) + '</div>'; }).join('');
     var bal = w.balance || 0;
-    var paidAt = isPaid ? new Date(paid[w.id]) : null;
+    var paidAt = isPaid ? new Date(tinfo.ts) : null;
     return '<div class="dr-row' + (isPaid ? ' paid' : '') + '" onclick="drToggle(' + JSON.stringify(w.id) + ')">'
       + '<div class="av">' + av + '</div>'
       + '<div class="mid"><div class="nm">' + jdEscHtml(w.name) + '</div>' + lines
       + '<div class="bal">ยอดค้างทั้งหมดตอนนี้ ' + (bal < 0 ? '-' : '') + formatMoney(Math.abs(bal)) + ' · <span class="open" onclick="drOpenWorker(' + JSON.stringify(w.id) + ',event)">เปิดหน้าคนงาน ›</span></div></div>'
       + '<div class="rt"><div class="amt">' + formatMoney(r.sum) + '</div>'
-      + '<div class="dr-tick"><span class="bx">' + (isPaid ? '✓' : '') + '</span>' + (isPaid ? 'จ่ายแล้ว ' + String(paidAt.getHours()).padStart(2, '0') + ':' + String(paidAt.getMinutes()).padStart(2, '0') : 'ยังไม่จ่าย') + '</div></div>'
+      + '<div class="dr-tick"><span class="bx">' + (isPaid ? '✓' : '') + '</span>' + (isPaid ? 'จ่ายแล้ว ' + String(paidAt.getHours()).padStart(2, '0') + ':' + String(paidAt.getMinutes()).padStart(2, '0') : 'ยังไม่จ่าย') + '</div>'
+      + (stillOwe ? '<div style="font-size:.66rem;color:#b45309;font-weight:700;text-align:right">⚠️ ยังไม่ได้บันทึกเงินออก<br>กดเพื่อบันทึก</div>' : '')
+      + (isPaid && tinfo && tinfo.wids.length ? '<div style="font-size:.66rem;color:#15803d;text-align:right">💵 บันทึกเบิก/จ่ายแล้ว</div>' : '')
+      + '</div>'
       + '</div>';
   }).join('');
 }
