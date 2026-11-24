@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v140">
-<title>💰 จ่ายเงินคนงาน PRO v140</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v141">
+<title>💰 จ่ายเงินคนงาน PRO v141</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1008,7 +1008,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v140 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v141 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -17003,10 +17003,21 @@ function drUnpaidItems(w, iso) {
 }
 // v138: จ่ายค่าแรงจากหน้านี้ = จ่ายเงินสดเต็มจำนวนที่ค้าง "ไม่หักล่วงหน้า" และไม่หักยอดติดลบเดิม (ผู้ใช้กำหนด)
 // บันทึกเป็นเบิก/จ่าย 1 รายการต่อคน ปิดยอดค่าแรงวันนั้นที่ค้างอยู่ (appliedTo) — เงินล่วงหน้า/ยอดติดลบเดิมยังค้างไว้เหมือนเดิม
-function drPayDay(w, iso) {
+function drPayDay(w, iso, deductAdv) {
   recalcWorker(w);
   var items = drUnpaidItems(w, iso);
   if (!items.length) return { wids: [], amt: 0, ded: 0, n: 0 };
+  if (deductAdv) {
+    // หักล่วงหน้า: ใช้ payItemNow() เดิม (สูตรเดียวกับปุ่ม "บันทึก + จ่ายเงินเลย")
+    var wids = [], a = 0, d = 0;
+    items.forEach(function (it) {
+      var before = (w.history || []).length;
+      var r = payItemNow(w, { id: it.h.id, ts: it.h.ts, date: it.h.date, type: it.h.type, detail: it.h.detail, amount: it.rem }, 'จ่ายค่าแรง (รายวันวันนี้) หักล่วงหน้า', thaiDateStr());
+      if ((w.history || []).length > before) wids.push(w.history[w.history.length - 1].id);
+      a += r.amt; d += r.deduct;
+    });
+    return { wids: wids, amt: round2(a), ded: round2(d), n: items.length };
+  }
   var amt = round2(items.reduce(function (s, it) { return s + it.rem; }, 0));
   var lastTs = items.reduce(function (m, it) { return Math.max(m, Number(it.h.ts) || 0); }, 0);
   var h = {
@@ -17033,16 +17044,27 @@ async function _drToggleInner(wid, ev) {
   var unpaid = drUnpaidItems(w, drDay), unpaidSum = round2(unpaid.reduce(function (s, it) { return s + it.rem; }, 0));
   if (unpaid.length) {
     // ยังค้าง → จ่าย
-    var adv = Number(w.advanceOwed || 0);
-    var msg = 'จ่ายเงินสด ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังค้าง)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้\nไม่หักเงินล่วงหน้า'
-      + (adv > 0 ? ' — ล่วงหน้าค้าง ' + formatMoney(adv) + ' ยังค้างไว้เหมือนเดิม' : '');
-    if (!await uiConfirm(msg)) return;
-    var r = drPayDay(w, drDay);
+    var adv = round2(Number(w.advanceOwed || 0));
+    var deductAdv = false;
+    if (adv > 0.004) {
+      // v141: มีเงินล่วงหน้าค้าง → ถามทุกครั้งว่าจะหักหรือไม่
+      var dedAmt = round2(Math.min(adv, unpaidSum));
+      var pick = await uiChoose(w.name + ' ค่าแรงวันนี้ค้าง ' + formatMoney(unpaidSum) + '\nมีเงินล่วงหน้าค้าง ' + formatMoney(adv) + '\n\nจะหักล่วงหน้าไหม?', [
+        { label: '💵 ไม่หัก — จ่ายเงินสดเต็ม ' + formatMoney(unpaidSum), value: 'full', cls: 'ok' },
+        { label: '⏱️ หักล่วงหน้า ' + formatMoney(dedAmt) + ' — จ่ายเงินสด ' + formatMoney(round2(unpaidSum - dedAmt)), value: 'deduct', cls: 'warn' },
+        { label: 'ยกเลิก', value: null, cls: 'cancel' }
+      ]);
+      if (!pick) return;
+      deductAdv = pick === 'deduct';
+    } else {
+      if (!await uiConfirm('จ่ายเงินสด ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังค้าง)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้')) return;
+    }
+    var r = drPayDay(w, drDay, deductAdv);
     var old = info || { wids: [] };
     day[wid] = { ts: Date.now(), wids: (old.wids || []).concat(r.wids), amt: round2((old.amt || 0) + r.amt), ded: round2((old.ded || 0) + r.ded) };
     m[drDay] = day; drSavePaid(m);
     renderAll(); saveData();
-    toast('💵 จ่าย ' + w.name + ' เงินสด ' + formatMoney(r.amt) + ' (ไม่หักล่วงหน้า) — ขึ้นในเบิกเงินวันนี้แล้ว');
+    toast('💵 จ่าย ' + w.name + ' เงินสด ' + formatMoney(r.amt) + (r.ded > 0 ? ' · หักล่วงหน้า ' + formatMoney(r.ded) : (adv > 0.004 ? ' (ไม่หักล่วงหน้า)' : '')) + ' — ขึ้นในเบิกเงินวันนี้แล้ว');
   } else if (info && info.wids && info.wids.length) {
     // จ่ายครบแล้วจากปุ่มนี้ → กดอีกที = ยกเลิกการจ่าย
     var made = (w.history || []).filter(function (h) { return info.wids.some(function (id) { return String(id) === String(h.id); }); });
@@ -17153,6 +17175,7 @@ setTimeout(drUpdateBadge, 800);
 #uiDlg .btns button{flex:1;border:none;border-radius:12px;padding:12px;font-family:'Mitr';font-size:.95rem;cursor:pointer}
 #uiDlg .ok{background:#16a34a;color:#fff}
 #uiDlg .cancel{background:#f1f5f9;color:#334155}
+#uiDlg .warn{background:#b45309;color:#fff}
 </style>
 <div id="uiDlg" role="dialog" aria-modal="true"><div class="box"><div class="msg" id="uiDlgMsg"></div><div class="btns"><button type="button" class="cancel" id="uiDlgNo">ยกเลิก</button><button type="button" class="ok" id="uiDlgYes">ตกลง</button></div></div></div>
 <script id="ui-dlg-v140-js">
@@ -17165,6 +17188,20 @@ function _uiDlgNext() {
   document.getElementById('uiDlgMsg').textContent = String(job.msg == null ? '' : job.msg);
   no.style.display = job.alert ? 'none' : '';
   yes.textContent = job.alert ? 'ตกลง' : (job.okText || 'ตกลง');
+  // v141: กล่องหลายตัวเลือก
+  var btnBox = yes.parentNode;
+  Array.prototype.forEach.call(btnBox.querySelectorAll('.extra'), function (b) { b.remove(); });
+  btnBox.style.flexDirection = job.choices ? 'column' : '';
+  yes.style.display = job.choices ? 'none' : '';
+  if (job.choices) {
+    no.style.display = 'none';
+    job.choices.forEach(function (c, k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'extra ' + (c.cls || (k === 0 ? 'ok' : 'cancel')); b.textContent = c.label;
+      b.onclick = function () { done(c.value); };
+      btnBox.appendChild(b);
+    });
+  }
   root.classList.add('on');
   var prevFocus = document.activeElement;
   function done(v) {
@@ -17177,16 +17214,18 @@ function _uiDlgNext() {
     setTimeout(_uiDlgNext, 0);
   }
   function onKey(e) {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(job.alert ? true : false); }
-    else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(true); }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(job.choices ? null : (job.alert ? true : false)); }
+    else if (e.key === 'Enter' && !job.choices) { e.preventDefault(); e.stopPropagation(); done(true); }
   }
   yes.onclick = function () { done(true); };
   no.onclick = function () { done(false); };
-  root.onclick = function (e) { if (e.target === root) done(job.alert ? true : false); };
+  root.onclick = function (e) { if (e.target === root) done(job.choices ? null : (job.alert ? true : false)); };
   document.addEventListener('keydown', onKey, true);
-  setTimeout(function () { yes.focus(); }, 30);
+  setTimeout(function () { var f = job.choices ? btnBox.querySelector('.extra') : yes; if (f) f.focus(); }, 30);
 }
 function uiConfirm(msg, okText) { return new Promise(function (res) { _uiDlgQ.push({ msg: msg, okText: okText, resolve: res }); _uiDlgNext(); }); }
+// v141: เลือก 1 ตัวเลือก — คืนค่า value ของปุ่มที่กด (กดพื้นหลัง/Esc = null)
+function uiChoose(msg, choices) { return new Promise(function (res) { _uiDlgQ.push({ msg: msg, choices: choices, resolve: res }); _uiDlgNext(); }); }
 function uiAlert(msg) { return new Promise(function (res) { _uiDlgQ.push({ msg: msg, alert: true, resolve: res }); _uiDlgNext(); }); }
 // alert() เดิมทุกจุด → กล่องในหน้า (ไม่ทำให้หน้าต่างค้าง)
 window.alert = function (m) { uiAlert(m); };
