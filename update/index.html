@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v132">
-<title>💰 จ่ายเงินคนงาน PRO v132</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v135">
+<title>💰 จ่ายเงินคนงาน PRO v135</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -226,6 +226,21 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-
   justify-content:center;min-height:60vh;gap:10px;color:var(--ink3);text-align:center}
 
 .detail-view{display:none}
+/* v135: ติดตายางหลายคน */
+.bdm-mode{display:flex;gap:6px;margin-bottom:10px}
+.bdm-mode button{flex:1;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:8px;font-family:'Mitr';font-size:.85rem;cursor:pointer;color:var(--ink2)}
+.bdm-mode button.on{background:#dcfce7;border-color:#16a34a;color:#14532d;font-weight:600}
+.bdm-list{max-height:42vh;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:4px}
+.bdm-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:9px}
+.bdm-row + .bdm-row{border-top:1px solid #f1f5f9}
+.bdm-row.has{background:#f0fdf4}
+.bdm-row .av{width:30px;text-align:center;font-size:1.3rem;flex-shrink:0}
+.bdm-row .av .w-photo{width:30px;height:30px}
+#bdmList .bdm-row .nm{flex:1 1 auto;min-width:0;font-size:.92rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bdmList .bdm-row input{width:96px!important;flex:0 0 96px!important;min-width:0!important;margin:0!important;padding:6px 8px!important;border:1.5px solid var(--border);border-radius:8px!important;font-family:'Mitr';font-size:.9rem;text-align:right;background:#fff}
+#bdmList .bdm-row.has input{border-color:#16a34a}
+.bdm-row .am{width:84px;text-align:right;font-family:'Mitr';font-size:.85rem;color:#15803d;flex-shrink:0}
+.bdm-sum{font-family:'Mitr';font-weight:600;font-size:.95rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 0 8px;text-align:center}
 /* v132: ช่องคนงานสี่เหลี่ยม */
 .placeholder-view.wtile-view{display:block;min-height:60vh;text-align:left;padding:4px 2px}
 .wtile-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 4px 12px}
@@ -989,7 +1004,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v132 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v135 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -2007,8 +2022,10 @@ function settingsRun(fn){
       รอบ1 = บันทึกจำนวนต้นที่ติดตา จ่ายทันทีตามอัตรา/ต้น &nbsp;·&nbsp; รอบ2 = นับต้นที่รอดจริง จ่ายเพิ่มอีกรอบ พร้อมเทียบดูว่าต้นตายเกินเกณฑ์ไหม
     </div>
 
-    <label>เลือกคนงาน</label>
+    <div id="bdWorkerRow">
+    <label>เลือกคนงาน <span style="font-size:.7rem;color:var(--ink3);font-weight:400">— กดแล้วพิมพ์ชื่อเพื่อค้นหาได้</span></label>
     <select class="finput" id="bdWorker" onchange="renderBuddingPanel()"></select>
+    </div>
 
     <div style="display:flex;gap:6px;margin:10px 0">
       <button class="btn-tool" id="bdTabBtn1" onclick="switchBuddingTab(1)" style="flex:1;border-radius:8px;padding:8px;cursor:pointer;font-family:'Mitr'">🌿 รอบ1</button>
@@ -2026,12 +2043,28 @@ function settingsRun(fn){
     </div>
 
     <div id="bdRound1Box">
+      <!-- v135: บันทึกรอบ1 ทีละคน หรือหลายคนพร้อมกัน -->
+      <div class="bdm-mode">
+        <button type="button" id="bdModeOne" class="on" onclick="bdSetMode('one')">👤 ทีละคน</button>
+        <button type="button" id="bdModeMulti" onclick="bdSetMode('multi')">👥 หลายคนพร้อมกัน</button>
+      </div>
+      <div id="bdR1Multi" style="display:none">
+        <input type="text" class="finput" id="bdmSearch" placeholder="🔍 พิมพ์ค้นหาชื่อ…" oninput="bdmRender()" autocomplete="off">
+        <div style="font-size:.74rem;color:var(--ink3);margin:4px 2px 6px">ใส่จำนวนต้นให้คนที่ติดวันนี้ (คนที่ไม่ใส่ = ไม่บันทึก) · อัตรา ฿<b id="bdmRateLbl">2</b>/ต้น (แก้ได้ที่ช่องอัตราด้านล่าง หรือ ⚙️)</div>
+        <div id="bdmList" class="bdm-list"></div>
+        <div style="font-size:.78rem;color:var(--ink2);margin:6px 0 2px">อัตรา (× <input type="number" step="0.1" min="0" id="bdmRate" style="width:56px;border:none;border-bottom:1.5px solid var(--green,#16a34a);background:transparent;text-align:center;font-family:'Mitr'" oninput="bdmRender(true)"> บาท/ต้น)</div>
+        <div id="bdmSum" class="bdm-sum"></div>
+        <button class="m-save" style="width:100%" onclick="bdmSave(false)">✅ บันทึกรอบ1 ทุกคนที่ใส่</button>
+        <button onclick="bdmSave(true)" style="width:100%;margin-top:8px;background:#16a34a;border:none;color:#fff;border-radius:10px;padding:10px;font-family:'Mitr',sans-serif;font-weight:500;font-size:.86rem;cursor:pointer">💵 บันทึก + จ่ายเงินเลย (ทุกคนที่ใส่)</button>
+      </div>
+      <div id="bdR1Single">
       <label>จำนวนต้นที่ติดตา</label>
       <input class="finput" type="number" min="0" step="1" id="bdR1Qty" placeholder="0" oninput="calcBuddingR1()">
       <div style="font-size:.78rem;color:var(--ink2);margin:4px 0">อัตรา (× <input type="number" step="0.1" min="0" id="bdR1Rate" style="width:56px;border:none;border-bottom:1.5px solid var(--green,#16a34a);background:transparent;text-align:center" oninput="calcBuddingR1()"> บาท/ต้น)</div>
       <div style="font-family:'Mitr';font-weight:700;font-size:1.1rem;margin-bottom:8px">รวม <span id="bdR1Total">฿0</span></div>
       <button class="m-save" style="width:100%" onclick="saveBuddingR1(false)">✅ บันทึกรอบ1</button>
       <button onclick="saveBuddingR1(true)" style="width:100%;margin-top:8px;background:#16a34a;border:none;color:#fff;border-radius:10px;padding:10px;font-family:'Mitr',sans-serif;font-weight:500;font-size:.86rem;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,.25)">💵 บันทึก + จ่ายเงินเลย</button>
+      </div>
     </div>
 
     <div id="bdRound2Box" style="display:none">
@@ -5484,6 +5517,7 @@ function renderSummary() {
   if (sAdvance) sAdvance.textContent = formatMoney(advanceToday);
   if (sTotal) sTotal.textContent = formatMoney(totalBalance);
   if (sGrandToday) sGrandToday.textContent = formatMoney(grandToday);
+  try { if (typeof drUpdateBadge === 'function') drUpdateBadge(); } catch (e) {}
 
   // breakdown เงินออกจากเก๊ะ (เบิก + ล่วงหน้า + เจ้าของจ่าย)
   const sGrandWithdraw = document.getElementById('sGrandWithdraw');
@@ -7596,12 +7630,108 @@ function openBuddingModal() {
   openModal('buddingModal');
 }
 
+// ==================== v135: ติดตารอบ1 หลายคนพร้อมกัน ====================
+var bdMode = 'one';
+var bdmDraft = {};   // { workerId: จำนวนต้น (ข้อความที่พิมพ์) }
+function bdSetMode(m) {
+  bdMode = m;
+  document.getElementById('bdModeOne').classList.toggle('on', m === 'one');
+  document.getElementById('bdModeMulti').classList.toggle('on', m === 'multi');
+  document.getElementById('bdR1Single').style.display = m === 'one' ? '' : 'none';
+  document.getElementById('bdR1Multi').style.display = m === 'multi' ? '' : 'none';
+  bdApplyWorkerRow();
+  if (m === 'multi') {
+    const r = document.getElementById('bdmRate');
+    if (r && !r.value) r.value = document.getElementById('bdR1Rate')?.value || buddingSettings.rate1;
+    bdmRender();
+    setTimeout(() => document.getElementById('bdmSearch')?.focus(), 50);
+  }
+}
+// ช่อง "เลือกคนงาน" ด้านบน ใช้เฉพาะโหมดทีละคน และรอบ2
+function bdApplyWorkerRow() {
+  const row = document.getElementById('bdWorkerRow');
+  if (row) row.style.display = (buddingTab === 1 && bdMode === 'multi') ? 'none' : '';
+}
+function bdmRate() {
+  const r = parseFloat(document.getElementById('bdmRate')?.value);
+  return Number.isFinite(r) && r >= 0 ? r : buddingSettings.rate1;
+}
+function bdmQty(wid) {
+  const v = parseInt(String(bdmDraft[wid] || '').replace(/,/g, ''), 10);
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
+function bdmRender(onlySum) {
+  const rate = bdmRate();
+  const lbl = document.getElementById('bdmRateLbl'); if (lbl) lbl.textContent = rate;
+  const money = n => '฿' + Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const list = workers.filter(w => w.id !== OWNER_ID);
+  if (!onlySum) {
+    const q = (document.getElementById('bdmSearch')?.value || '').trim().toLowerCase();
+    const shown = list.filter(w => !q || String(w.name || '').toLowerCase().includes(q) || bdmQty(w.id) > 0);
+    // คนที่ใส่จำนวนแล้วขึ้นก่อน
+    shown.sort((a, b) => (bdmQty(b.id) > 0) - (bdmQty(a.id) > 0));
+    document.getElementById('bdmList').innerHTML = shown.length ? shown.map(w => {
+      const qn = bdmQty(w.id);
+      const av = w.photo ? '<img class="w-photo" src="' + w.photo + '" alt="">' : (w.emoji || '👤');
+      return '<div class="bdm-row' + (qn ? ' has' : '') + '" id="bdmRow_' + w.id + '">'
+        + '<div class="av">' + av + '</div><div class="nm">' + jdEscHtml(w.name) + '</div>'
+        + '<input type="text" inputmode="numeric" placeholder="กี่ต้น" value="' + jdEscHtml(bdmDraft[w.id] || '') + '" oninput="bdmInput(' + JSON.stringify(w.id) + ',this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();document.getElementById(\'bdmSearch\').select();document.getElementById(\'bdmSearch\').focus();}">'
+        + '<div class="am" id="bdmAm_' + w.id + '">' + (qn ? money(qn * rate) : '') + '</div></div>';
+    }).join('') : '<div style="text-align:center;color:var(--ink3);padding:16px;font-size:.85rem">ไม่พบชื่อที่ค้นหา</div>';
+  } else {
+    list.forEach(w => { const el = document.getElementById('bdmAm_' + w.id); if (el) { const qn = bdmQty(w.id); el.textContent = qn ? money(qn * rate) : ''; } });
+  }
+  let n = 0, trees = 0;
+  list.forEach(w => { const qn = bdmQty(w.id); if (qn) { n++; trees += qn; } });
+  document.getElementById('bdmSum').innerHTML = n
+    ? `ใส่แล้ว ${n} คน · ${trees.toLocaleString('th-TH')} ต้น · รวม <span style="color:#15803d">${money(trees * rate)}</span>`
+    : '<span style="color:var(--ink3);font-weight:400">ยังไม่ได้ใส่จำนวนต้นให้ใคร</span>';
+}
+function bdmInput(wid, el) {
+  bdmDraft[wid] = el.value;
+  const row = document.getElementById('bdmRow_' + wid);
+  if (row) row.classList.toggle('has', bdmQty(wid) > 0);
+  bdmRender(true);
+}
+function bdmSave(payNow) {
+  const rate = bdmRate();
+  const jobs = workers.filter(w => w.id !== OWNER_ID && bdmQty(w.id) > 0).map(w => ({ w, qty: bdmQty(w.id) }));
+  if (!jobs.length) return toast('❌ ยังไม่ได้ใส่จำนวนต้นให้ใคร');
+  const trees = jobs.reduce((s, j) => s + j.qty, 0);
+  const names = jobs.map(j => `${j.w.name} ${j.qty.toLocaleString('th-TH')} ต้น`).join('\n');
+  if (!confirm(`บันทึกติดตา รอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น · ฿${(trees * rate).toLocaleString('th-TH', { minimumFractionDigits: 2 })}${payNow ? '\nและจ่ายเงินทันที' : ''}\n\n${names}`)) return;
+  const thaiStr = thaiDateStr();
+  let paid = 0, ded = 0;
+  jobs.forEach(({ w, qty }) => {
+    // ใช้รูปแบบเดียวกับบันทึกทีละคน (saveBuddingR1)
+    const item = {
+      id: uid(), ts: Date.now(), date: thaiStr,
+      type: 'piece', amount: qty * rate,
+      detail: `ติดตา รอบ1: อ้าง ${qty.toLocaleString('th-TH')} ต้น (฿${rate}/ต้น)`,
+      workType: 'ติดตา รอบ1', qty: qty
+    };
+    w.history.push(item);
+    if (!payNow) w.pending.push({ ...item });
+    recalcWorker(w);
+    if (payNow) { const r = payItemNow(w, item, 'จ่ายเงินติดตา รอบ1 ทันที', thaiStr); paid += r.amt; ded += r.deduct; }
+  });
+  bdmDraft = {};
+  document.getElementById('bdmSearch').value = '';
+  renderAll();
+  saveData();
+  bdmRender();
+  toast(payNow
+    ? `💵 บันทึก + จ่ายแล้ว ${jobs.length} คน · ${paid.toFixed(2)} บาท` + (ded > 0 ? ` · หักล่วงหน้า ${ded.toFixed(2)} บาท` : '')
+    : `✅ บันทึกรอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น`);
+}
+
 function switchBuddingTab(n) {
   buddingTab = n;
   document.getElementById('bdRound1Box').style.display = n === 1 ? 'block' : 'none';
   document.getElementById('bdRound2Box').style.display = n === 2 ? 'block' : 'none';
   document.getElementById('bdTabBtn1').style.background = n === 1 ? 'var(--green,#dcfce7)' : '';
   document.getElementById('bdTabBtn2').style.background = n === 2 ? 'var(--blue,#dbeafe)' : '';
+  bdApplyWorkerRow();
   renderBuddingPanel();
 }
 
@@ -14981,8 +15111,8 @@ body, table, th, td, button, input, select, textarea { line-height: 1.5; }
   const isQuota = e => e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014 || /quota/i.test(String(e.message || e)));
 
   /* ---------------- 1) ซิงค์ข้อมูลในเครื่อง ---------------- */
-  const SHARED_KEYS = ['dailyAttendancePanel', 'slip_expenses_v1', 'equip_slips_v111', 'customContractTypes', 'buddingSettings', 'payroll_std_wage_v89', 'sd_org_name_v87'];
-  const SHARED_NAME = { dailyAttendancePanel: 'เช็คชื่อรายวัน', slip_expenses_v1: 'สลิปค่าใช้จ่าย', equip_slips_v111: 'รูปสลิปซื้ออุปกรณ์', customContractTypes: 'ประเภทงานเหมาที่เพิ่มเอง', buddingSettings: 'ตั้งค่าติดตายาง', payroll_std_wage_v89: 'ค่าแรงมาตรฐาน', sd_org_name_v87: 'ชื่อกิจการ' };
+  const SHARED_KEYS = ['dailyAttendancePanel', 'daily_paid_v134', 'slip_expenses_v1', 'equip_slips_v111', 'customContractTypes', 'buddingSettings', 'payroll_std_wage_v89', 'sd_org_name_v87'];
+  const SHARED_NAME = { dailyAttendancePanel: 'เช็คชื่อรายวัน', daily_paid_v134: 'ติ๊กจ่ายแล้ว (รายวันวันนี้)', slip_expenses_v1: 'สลิปค่าใช้จ่าย', equip_slips_v111: 'รูปสลิปซื้ออุปกรณ์', customContractTypes: 'ประเภทงานเหมาที่เพิ่มเอง', buddingSettings: 'ตั้งค่าติดตายาง', payroll_std_wage_v89: 'ค่าแรงมาตรฐาน', sd_org_name_v87: 'ชื่อกิจการ' };
   const META = 'payroll_shared_meta_v104';
   const P = Storage.prototype, _set = P.setItem, _rem = P.removeItem, _get = P.getItem;
   let applying = false;
@@ -16501,4 +16631,340 @@ new MutationObserver(function (muts) {
     });
   });
 }).observe(document.body, { childList: true, subtree: true });
+</script>
+<style>
+.sksel-wrap{position:relative;display:block}
+.sksel-wrap.inline{display:inline-block;min-width:180px}
+select.sksel-native{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;pointer-events:none!important;left:0;top:0}
+.sksel-input{width:100%;box-sizing:border-box;cursor:text;padding-right:34px!important}
+.sksel-caret{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.6;font-size:.8rem}
+.sksel-list{position:fixed;z-index:100001;background:#fff;border:1px solid #d6dbe6;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.22);max-height:300px;overflow:auto;padding:4px;font-family:'Sarabun','Mitr',sans-serif}
+.sksel-opt{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.92rem;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sksel-opt.hl{background:#eef2ff}
+.sksel-opt.cur{font-weight:700;color:#4338ca}
+.sksel-opt mark{background:#fef08a;color:inherit;padding:0}
+.sksel-empty{padding:10px;color:#94a3b8;font-size:.86rem;text-align:center}
+</style>
+<script>
+// v133: ช่องเลือกคนงานแบบพิมพ์ค้นหาชื่อได้ — ใช้กับ select เดิม (ค่าและ onchange เดิมทำงานเหมือนเดิม)
+var SKSEL_IDS = ['bdWorker', 'filterWorker', 'jobDashWorker'];
+var SKSEL_BLOCK = ['bdWorker'];   // ช่องที่กว้างเต็มแถว
+var _skselSelDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+var _skselOpen = null;
+function skselLabel(sel) {
+  var o = sel.options[sel.selectedIndex];
+  return o ? o.textContent.trim() : '';
+}
+function skselRefresh(sel) {
+  var inp = sel._skInput;
+  if (!inp || document.activeElement === inp) return;
+  inp.value = skselLabel(sel);
+  inp.parentNode.style.display = (sel.style.display === 'none' || sel.hidden) ? 'none' : '';
+}
+function skselEnhance(sel) {
+  if (!sel || sel._skInput) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'sksel-wrap' + (SKSEL_BLOCK.indexOf(sel.id) >= 0 ? '' : ' inline');
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = (sel.className || '') + ' sksel-input';
+  inp.style.cssText = sel.style.cssText;
+  inp.setAttribute('autocomplete', 'off');
+  inp.placeholder = '🔍 พิมพ์ค้นหาชื่อ…';
+  var caret = document.createElement('span');
+  caret.className = 'sksel-caret'; caret.textContent = '▾';
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel); wrap.appendChild(inp); wrap.appendChild(caret);
+  sel.classList.add('sksel-native');
+  sel._skInput = inp;
+  Object.defineProperty(sel, 'value', {
+    configurable: true,
+    get: function () { return _skselSelDesc.get.call(this); },
+    set: function (v) { _skselSelDesc.set.call(this, v); skselRefresh(this); }
+  });
+  new MutationObserver(function () { skselRefresh(sel); }).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'hidden'] });
+  sel.addEventListener('change', function () { skselRefresh(sel); });
+  inp.addEventListener('focus', function () { inp.select(); skselShow(sel, ''); });
+  inp.addEventListener('click', function () { if (!_skselOpen) skselShow(sel, ''); });
+  inp.addEventListener('input', function () { skselShow(sel, inp.value); });
+  inp.addEventListener('keydown', function (e) {
+    var st = _skselOpen;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!st) { skselShow(sel, ''); return; }
+      st.hl = Math.max(0, Math.min(st.items.length - 1, st.hl + (e.key === 'ArrowDown' ? 1 : -1)));
+      skselPaint();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (st && st.items[st.hl]) skselPick(st.items[st.hl].value);
+    } else if (e.key === 'Escape') {
+      skselHide(); inp.value = skselLabel(sel); inp.blur();
+    }
+  });
+  inp.addEventListener('blur', function () { setTimeout(function () { skselHide(); inp.value = skselLabel(sel); }, 150); });
+  skselRefresh(sel);
+}
+function skselEsc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function skselShow(sel, q) {
+  q = String(q || '').trim().toLowerCase();
+  var items = [];
+  Array.prototype.forEach.call(sel.options, function (o) {
+    var t = o.textContent.trim();
+    if (!q || t.toLowerCase().indexOf(q) >= 0) items.push({ value: o.value, text: t });
+  });
+  if (!_skselOpen || _skselOpen.sel !== sel) {
+    skselHide();
+    var box = document.createElement('div');
+    box.className = 'sksel-list';
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    document.body.appendChild(box);
+    _skselOpen = { sel: sel, box: box };
+  }
+  _skselOpen.items = items; _skselOpen.q = q;
+  var curIdx = items.findIndex(function (it) { return it.value === sel.value; });
+  _skselOpen.hl = q ? 0 : Math.max(0, curIdx);
+  skselPaint();
+  var r = sel._skInput.getBoundingClientRect(), box = _skselOpen.box;
+  box.style.minWidth = Math.max(r.width, 200) + 'px';
+  box.style.left = Math.min(r.left, window.innerWidth - Math.max(r.width, 200) - 8) + 'px';
+  var below = window.innerHeight - r.bottom;
+  if (below < 220 && r.top > below) { box.style.top = ''; box.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+  else { box.style.bottom = ''; box.style.top = (r.bottom + 4) + 'px'; }
+}
+function skselPaint() {
+  var st = _skselOpen; if (!st) return;
+  var q = st.q, sel = st.sel;
+  if (!st.items.length) { st.box.innerHTML = '<div class="sksel-empty">ไม่พบชื่อ "' + skselEsc(q) + '"</div>'; return; }
+  st.box.innerHTML = st.items.map(function (it, i) {
+    var t = skselEsc(it.text);
+    if (q) { var k = it.text.toLowerCase().indexOf(q); if (k >= 0) t = skselEsc(it.text.slice(0, k)) + '<mark>' + skselEsc(it.text.slice(k, k + q.length)) + '</mark>' + skselEsc(it.text.slice(k + q.length)); }
+    return '<div class="sksel-opt' + (i === st.hl ? ' hl' : '') + (it.value === sel.value ? ' cur' : '') + '" data-v="' + skselEsc(it.value) + '">' + t + '</div>';
+  }).join('');
+  Array.prototype.forEach.call(st.box.querySelectorAll('.sksel-opt'), function (el) {
+    el.addEventListener('click', function () { skselPick(el.getAttribute('data-v')); });
+  });
+  var hl = st.box.querySelector('.hl'); if (hl) hl.scrollIntoView({ block: 'nearest' });
+}
+function skselPick(v) {
+  var st = _skselOpen; if (!st) return;
+  var sel = st.sel;
+  skselHide();
+  var changed = sel.value !== v;
+  sel.value = v;
+  sel._skInput.value = skselLabel(sel);
+  sel._skInput.blur();
+  if (changed) sel.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function skselHide() { if (_skselOpen) { _skselOpen.box.remove(); _skselOpen = null; } }
+window.addEventListener('resize', skselHide);
+document.addEventListener('scroll', function (e) { if (_skselOpen && !_skselOpen.box.contains(e.target)) skselHide(); }, true);
+SKSEL_IDS.forEach(function (id) { skselEnhance(document.getElementById(id)); });
+</script>
+<!-- v134: ปุ่มลอย + ป๊อปอัพ "รายวันวันนี้" — ดูว่าวันนี้ใครได้เงินบ้าง และติ๊กว่าจ่ายแล้ว (ติ๊กเป็นเครื่องหมายเท่านั้น ไม่เปลี่ยนยอดเงิน) -->
+<style id="dr-v134">
+#drFab{position:fixed;right:18px;bottom:186px;z-index:1600;background:#1d4ed8;color:#fff;border:none;border-radius:999px;padding:12px 18px;font-family:'Mitr',sans-serif;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:6px}
+#drFab:active{transform:scale(.97)}
+#drFab .dr-badge{position:absolute;top:-7px;right:-5px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:#ef4444;color:#fff;font-size:.75rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);font-family:'Mitr'}
+#drFab .dr-badge.zero{display:none}
+#drFab.pulse{animation:drPulse .9s ease 2}
+@keyframes drPulse{0%,100%{transform:scale(1)}40%{transform:scale(1.12)}}
+body:has(#cbm-panel.open) #drFab,body.ss-open #drFab,body:has(#drModal.on) #drFab,body:has(#payAlertModal.on) #drFab{display:none}
+@media(max-width:880px){
+  #drFab{bottom:calc(var(--mob-nav-h) + var(--safe-b) + 174px)!important;right:12px!important}
+  body.mob-overlay #drFab{display:none!important}
+}
+#drModal{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:3000;display:none;align-items:center;justify-content:center;padding:14px}
+#drModal.on{display:flex}
+#drModal .dr-box{background:#fff;border-radius:20px;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(15,23,42,.35);overflow:hidden}
+.dr-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.dr-head .ic{width:42px;height:42px;border-radius:12px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.dr-head h3{margin:0;font-family:'Mitr';font-size:1.1rem;color:#1e293b}
+.dr-head .sub{font-size:.78rem;color:#64748b}
+.dr-x{margin-left:auto;border:none;background:#f1f5f9;border-radius:10px;width:34px;height:34px;cursor:pointer;font-size:1rem}
+.dr-nav{display:flex;gap:6px;padding:0 18px 8px}
+.dr-nav button{flex:1;border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:7px;font-family:'Sarabun';font-size:.82rem;cursor:pointer}
+.dr-nav button:disabled{opacity:.4;cursor:default}
+.dr-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 18px 10px}
+.dr-sum > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:8px;text-align:center}
+.dr-sum .k{font-size:.7rem;color:#64748b}
+.dr-sum .v{font-family:'Mitr';font-weight:600;font-size:1rem}
+.dr-tools{display:flex;justify-content:space-between;align-items:center;padding:0 18px 6px;font-size:.78rem}
+.dr-tools{gap:10px}.dr-tools input[type=text]{flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:999px;font-family:'Sarabun';font-size:.82rem;min-width:0}.dr-tools span{white-space:nowrap}
+.dr-list{overflow:auto;padding:4px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.dr-row{display:flex;gap:10px;align-items:flex-start;border:1.5px solid #e2e8f0;border-radius:14px;padding:10px 12px;background:#fff;cursor:pointer;transition:background .12s,border-color .12s}
+.dr-row.paid{background:#f0fdf4;border-color:#86efac}
+.dr-row .av{flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.9rem}
+.dr-row .av .w-photo{width:44px;height:44px}
+.dr-row .mid{flex:1;min-width:0}
+.dr-row .nm{font-family:'Mitr';font-weight:500;font-size:.98rem;color:#1e293b}
+.dr-row .ln{font-size:.74rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr-row .bal{font-size:.7rem;color:#94a3b8;margin-top:2px}
+.dr-row .rt{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.dr-row .amt{font-family:'Mitr';font-weight:600;font-size:1.05rem;color:#15803d}
+.dr-tick{display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;color:#475569;border:1.5px solid #cbd5e1;border-radius:999px;padding:3px 10px 3px 6px;background:#fff;user-select:none}
+.dr-tick .bx{width:18px;height:18px;border-radius:5px;border:2px solid #94a3b8;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff}
+.dr-row.paid .dr-tick{border-color:#16a34a;color:#15803d;background:#dcfce7}
+.dr-row.paid .dr-tick .bx{background:#16a34a;border-color:#16a34a}
+.dr-row .open{font-size:.72rem;color:#4f46e5;text-decoration:underline;cursor:pointer}
+.dr-empty{text-align:center;color:#94a3b8;padding:30px 10px;font-size:.9rem}
+.dr-foot{display:flex;gap:8px;padding:10px 18px 16px;border-top:1px solid #f1f5f9}
+.dr-foot button{flex:1;border:none;border-radius:12px;padding:11px;font-family:'Mitr';font-size:.9rem;cursor:pointer}
+.dr-foot .cp{background:#eef2ff;color:#3730a3}
+.dr-foot .cl{background:#f1f5f9;color:#334155}
+</style>
+<button id="drFab" type="button" onclick="drOpen()" title="ดูว่าวันนี้ใครได้เงินบ้าง และติ๊กว่าจ่ายแล้ว">📋 รายวันวันนี้<span class="dr-badge zero" id="drBadge">0</span></button>
+<div id="drModal" onclick="if(event.target===this)drClose()">
+  <div class="dr-box" role="dialog" aria-modal="true">
+    <div class="dr-head">
+      <div class="ic">📋</div>
+      <div><h3 id="drTitle">รายวันวันนี้</h3><div class="sub" id="drDateLbl">—</div></div>
+      <button class="dr-x" onclick="drClose()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="dr-nav">
+      <button type="button" onclick="drShift(-1)">◀ วันก่อน</button>
+      <button type="button" onclick="drGo(localISO())">📆 วันนี้</button>
+      <button type="button" id="drNext" onclick="drShift(1)">วันถัดไป ▶</button>
+    </div>
+    <div class="dr-sum">
+      <div><div class="k">👥 ได้เงิน</div><div class="v" id="drPeople">0 คน</div></div>
+      <div><div class="k">💰 รวมวันนี้</div><div class="v" id="drTotal" style="color:#15803d">฿0</div></div>
+      <div><div class="k">⏳ ยังไม่ติ๊กจ่าย</div><div class="v" id="drUnpaid" style="color:#dc2626">฿0</div></div>
+    </div>
+    <div class="dr-tools">
+      <input type="text" id="drSearch" placeholder="🔍 พิมพ์ค้นหาชื่อ…" oninput="drRender()">
+      <span><label style="cursor:pointer"><input type="checkbox" id="drHidePaid" onchange="drRender()" style="vertical-align:middle"> ซ่อนที่จ่ายแล้ว</label></span>
+    </div>
+    <div class="dr-list" id="drList"></div>
+    <div class="dr-foot">
+      <button class="cp" onclick="drCopy()">📋 คัดลอกสรุป</button>
+      <button class="cl" onclick="drClose()">ปิด</button>
+    </div>
+  </div>
+</div>
+<script id="dr-v134-js">
+var DR_KEY = 'daily_paid_v134';
+var drDay = null, _drLastCount = -1;
+function drPaidMap() { try { return JSON.parse(localStorage.getItem(DR_KEY)) || {}; } catch (e) { return {}; } }
+function drSavePaid(m) {
+  // เก็บแค่ 60 วันล่าสุด
+  var keys = Object.keys(m).sort();
+  while (keys.length > 60) delete m[keys.shift()];
+  try { localStorage.setItem(DR_KEY, JSON.stringify(m)); } catch (e) {}
+}
+function drThaiDate(iso) {
+  var d = new Date(iso + 'T00:00:00');
+  var dn = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][d.getDay()];
+  return 'วัน' + dn + 'ที่ ' + d.getDate() + ' ' + ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+// รวมรายการที่ "ได้เงิน" ของวันนั้น (เช็คชื่อ/รายวัน งานเหมา โบนัส — สูตรเดียวกับ "จ่ายวันนี้")
+function drCollect(iso) {
+  var rows = [];
+  (workers || []).forEach(function (w) {
+    if (w.id == OWNER_ID) return;
+    var items = [], sum = 0;
+    (w.history || []).forEach(function (h) {
+      if (!LEDGER_EARN[h.type]) return;
+      if (localISO(new Date(h.ts || 0)) !== iso) return;
+      var a = Number(h.amount) || 0;
+      if (!a) return;
+      items.push(h); sum += a;
+    });
+    if (items.length) rows.push({ w: w, items: items, sum: round2(sum) });
+  });
+  return rows;
+}
+function drItemText(h) {
+  var t = h.detail || (h.type === 'attendance' ? 'ค่าแรงรายวัน' : (h.type === 'bonus' ? 'โบนัส' : 'งานเหมา'));
+  return t + ' ' + formatMoney(h.amount);
+}
+function drUpdateBadge() {
+  var b = document.getElementById('drBadge');
+  if (!b) return;
+  var iso = localISO(), paid = drPaidMap()[iso] || {};
+  var n = drCollect(iso).filter(function (r) { return !paid[r.w.id]; }).length;
+  b.textContent = n;
+  b.classList.toggle('zero', !n);
+  // มีคนได้เงินเพิ่ม (เพิ่งคีย์รายการ) → ปุ่มเด้งให้เห็น
+  if (_drLastCount >= 0 && n > _drLastCount) {
+    var f = document.getElementById('drFab');
+    if (f) { f.classList.remove('pulse'); void f.offsetWidth; f.classList.add('pulse'); }
+  }
+  _drLastCount = n;
+  if (document.getElementById('drModal').classList.contains('on')) drRender();
+}
+function drOpen(iso) {
+  drDay = iso || localISO();
+  document.getElementById('drSearch').value = '';
+  document.getElementById('drModal').classList.add('on');
+  drRender();
+}
+function drClose() { document.getElementById('drModal').classList.remove('on'); }
+function drGo(iso) { drDay = iso; drRender(); }
+function drShift(n) {
+  var d = new Date(drDay + 'T00:00:00'); d.setDate(d.getDate() + n);
+  var iso = localISO(d); if (iso > localISO()) return;
+  drGo(iso);
+}
+function drToggle(wid, ev) {
+  if (ev) ev.stopPropagation();
+  var m = drPaidMap(), day = m[drDay] || {};
+  if (day[wid]) delete day[wid]; else day[wid] = Date.now();
+  m[drDay] = day; drSavePaid(m);
+  drRender(); drUpdateBadge();
+}
+function drOpenWorker(wid, ev) {
+  if (ev) ev.stopPropagation();
+  drClose();
+  if (typeof openDetail === 'function') openDetail(wid);
+}
+function drRender() {
+  var iso = drDay || localISO(), isToday = iso === localISO();
+  document.getElementById('drTitle').textContent = isToday ? 'รายวันวันนี้' : 'รายวัน';
+  document.getElementById('drDateLbl').textContent = drThaiDate(iso) + (isToday ? ' (วันนี้)' : '');
+  document.getElementById('drNext').disabled = isToday;
+  var paid = drPaidMap()[iso] || {};
+  var rows = drCollect(iso);
+  var total = 0, unpaid = 0;
+  rows.forEach(function (r) { total += r.sum; if (!paid[r.w.id]) unpaid += r.sum; });
+  document.getElementById('drPeople').textContent = rows.length + ' คน';
+  document.getElementById('drTotal').textContent = formatMoney(total);
+  document.getElementById('drUnpaid').textContent = formatMoney(unpaid);
+  var q = (document.getElementById('drSearch').value || '').trim().toLowerCase();
+  var hidePaid = document.getElementById('drHidePaid').checked;
+  var list = rows.filter(function (r) {
+    if (q && String(r.w.name || '').toLowerCase().indexOf(q) < 0) return false;
+    if (hidePaid && paid[r.w.id]) return false;
+    return true;
+  });
+  // ยังไม่จ่ายขึ้นก่อน แล้วเรียงยอดมากไปน้อย
+  list.sort(function (a, b) { return (!!paid[a.w.id] - !!paid[b.w.id]) || (b.sum - a.sum); });
+  var box = document.getElementById('drList');
+  if (!rows.length) { box.innerHTML = '<div class="dr-empty">' + (isToday ? 'วันนี้ยังไม่มีใครได้เงิน<br><small>คีย์รายวันหรืองานเหมาแล้ว รายชื่อจะขึ้นที่นี่เอง</small>' : 'วันนี้ไม่มีรายการได้เงิน') + '</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="dr-empty">ไม่พบรายชื่อที่ค้นหา</div>'; return; }
+  box.innerHTML = list.map(function (r) {
+    var w = r.w, isPaid = !!paid[w.id];
+    var av = w.photo ? '<img class="w-photo" src="' + w.photo + '" alt="">' : (w.emoji || '👤');
+    var lines = r.items.map(function (h) { return '<div class="ln">• ' + jdEscHtml(drItemText(h)) + '</div>'; }).join('');
+    var bal = w.balance || 0;
+    var paidAt = isPaid ? new Date(paid[w.id]) : null;
+    return '<div class="dr-row' + (isPaid ? ' paid' : '') + '" onclick="drToggle(' + JSON.stringify(w.id) + ')">'
+      + '<div class="av">' + av + '</div>'
+      + '<div class="mid"><div class="nm">' + jdEscHtml(w.name) + '</div>' + lines
+      + '<div class="bal">ยอดค้างทั้งหมดตอนนี้ ' + (bal < 0 ? '-' : '') + formatMoney(Math.abs(bal)) + ' · <span class="open" onclick="drOpenWorker(' + JSON.stringify(w.id) + ',event)">เปิดหน้าคนงาน ›</span></div></div>'
+      + '<div class="rt"><div class="amt">' + formatMoney(r.sum) + '</div>'
+      + '<div class="dr-tick"><span class="bx">' + (isPaid ? '✓' : '') + '</span>' + (isPaid ? 'จ่ายแล้ว ' + String(paidAt.getHours()).padStart(2, '0') + ':' + String(paidAt.getMinutes()).padStart(2, '0') : 'ยังไม่จ่าย') + '</div></div>'
+      + '</div>';
+  }).join('');
+}
+function drCopy() {
+  var iso = drDay || localISO(), paid = drPaidMap()[iso] || {};
+  var rows = drCollect(iso), total = 0;
+  var txt = '📋 รายวัน ' + drThaiDate(iso) + '\n';
+  rows.forEach(function (r, i) { total += r.sum; txt += (i + 1) + '. ' + r.w.name + ' ' + formatMoney(r.sum) + (paid[r.w.id] ? ' ✅ จ่ายแล้ว' : ' ⏳ ยังไม่จ่าย') + '\n'; });
+  txt += 'รวม ' + rows.length + ' คน ' + formatMoney(total);
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('📋 คัดลอกสรุปแล้ว — วางใน LINE ได้เลย'); }).catch(function () { prompt('คัดลอกข้อความนี้', txt); });
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('drModal').classList.contains('on')) drClose(); });
+window.addEventListener('storage', function (e) { if (e.key === DR_KEY) drUpdateBadge(); });
+setTimeout(drUpdateBadge, 800);
 </script>
