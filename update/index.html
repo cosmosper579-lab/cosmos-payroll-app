@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v138">
-<title>💰 จ่ายเงินคนงาน PRO v138</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v139">
+<title>💰 จ่ายเงินคนงาน PRO v139</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -226,6 +226,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-
   justify-content:center;min-height:60vh;gap:10px;color:var(--ink3);text-align:center}
 
 .detail-view{display:none}
+/* v139: วันที่ทำงานในหน้าติดตายาง */
+.bd-date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+.bd-date-row .thdp-btn{min-width:150px;padding:7px 12px}
+.bd-date-warn{font-size:.74rem;font-weight:700;color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:999px;padding:2px 9px}
 /* v135: ติดตายางหลายคน */
 .bdm-mode{display:flex;gap:6px;margin-bottom:10px}
 .bdm-mode button{flex:1;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:8px;font-family:'Mitr';font-size:.85rem;cursor:pointer;color:var(--ink2)}
@@ -1004,7 +1008,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v138 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v139 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -2025,6 +2029,13 @@ function settingsRun(fn){
     <div id="bdWorkerRow">
     <label>เลือกคนงาน <span style="font-size:.7rem;color:var(--ink3);font-weight:400">— กดแล้วพิมพ์ชื่อเพื่อค้นหาได้</span></label>
     <select class="finput" id="bdWorker" onchange="renderBuddingPanel()"></select>
+    </div>
+    <!-- v139: วันที่ทำงาน (บันทึกย้อนหลังได้) -->
+    <div class="bd-date-row">
+      <label style="margin:0;white-space:nowrap">📅 วันที่ทำงาน</label>
+      <input class="finput" type="date" id="bdDate" onchange="bdDateChanged()">
+      <span id="bdDateWarn" class="bd-date-warn" style="display:none">⏪ บันทึกย้อนหลัง</span>
+      <button type="button" class="thdp-chip" onclick="bdSetToday()">วันนี้</button>
     </div>
 
     <div style="display:flex;gap:6px;margin:10px 0">
@@ -7611,6 +7622,7 @@ function toggleBuddingSettings() {
 function openBuddingModal() {
   loadBuddingSettings();
 
+  bdSetToday();
   const sel = document.getElementById('bdWorker');
   const activeWorkers = workers.filter(w => w.id !== OWNER_ID);
   sel.innerHTML = activeWorkers.map(w => `<option value="${w.id}">${w.emoji || '👤'} ${w.name}</option>`).join('');
@@ -7628,6 +7640,33 @@ function openBuddingModal() {
   switchBuddingTab(1);
   renderBuddingPanel();
   openModal('buddingModal');
+}
+
+// ==================== v139: วันที่ทำงาน (บันทึกย้อนหลัง) ====================
+function bdSetToday() { const el = document.getElementById('bdDate'); if (el) { el.value = localISO(); bdDateChanged(); } }
+function bdDateChanged() {
+  const el = document.getElementById('bdDate'), warn = document.getElementById('bdDateWarn');
+  const today = localISO();
+  if (el && el.value > today) { el.value = today; toast('⚠️ เลือกวันในอนาคตไม่ได้'); }
+  if (warn) warn.style.display = (el && el.value && el.value !== today) ? '' : 'none';
+}
+// เวลาที่ใช้บันทึก: วันนี้ = เวลาปัจจุบัน · ย้อนหลัง = วันที่เลือก (เวลาเดียวกับตอนนี้ เพื่อเรียงลำดับได้)
+function bdDateCtx() {
+  const today = localISO();
+  const iso = document.getElementById('bdDate')?.value || today;
+  if (iso >= today) return { ts: Date.now(), thaiStr: thaiDateStr(), back: false, iso: today };
+  const now = new Date(), p = iso.split('-').map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2], now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+  return { ts: d.getTime(), thaiStr: thaiDateStr(d), back: true, iso };
+}
+// จ่ายทันที — ถ้าบันทึกย้อนหลัง ให้รายการจ่ายอยู่วันเดียวกับงาน
+function bdPayNow(w, item, detail, ctx) {
+  const r = payItemNow(w, item, detail, ctx.thaiStr);
+  if (ctx.back) {
+    const last = (w.history || []).slice().reverse().find(h => h.type === 'withdraw' && Array.isArray(h.appliedTo) && h.appliedTo.some(a => String(a.id) === String(item.id)));
+    if (last) { last.ts = Number(item.ts) + 1; last.date = ctx.thaiStr; recalcWorker(w); }
+  }
+  return r;
 }
 
 // ==================== v135: ติดตารอบ1 หลายคนพร้อมกัน ====================
@@ -7699,13 +7738,13 @@ function bdmSave(payNow) {
   if (!jobs.length) return toast('❌ ยังไม่ได้ใส่จำนวนต้นให้ใคร');
   const trees = jobs.reduce((s, j) => s + j.qty, 0);
   const names = jobs.map(j => `${j.w.name} ${j.qty.toLocaleString('th-TH')} ต้น`).join('\n');
-  if (!confirm(`บันทึกติดตา รอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น · ฿${(trees * rate).toLocaleString('th-TH', { minimumFractionDigits: 2 })}${payNow ? '\nและจ่ายเงินทันที' : ''}\n\n${names}`)) return;
-  const thaiStr = thaiDateStr();
+  if (!confirm(`${bdDateCtx().back ? '⏪ ย้อนหลังวันที่ ' + bdDateCtx().thaiStr + '\n' : ''}บันทึกติดตา รอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น · ฿${(trees * rate).toLocaleString('th-TH', { minimumFractionDigits: 2 })}${payNow ? '\nและจ่ายเงินทันที' : ''}\n\n${names}`)) return;
+  const _bdc = bdDateCtx(); const thaiStr = _bdc.thaiStr;
   let paid = 0, ded = 0;
   jobs.forEach(({ w, qty }) => {
     // ใช้รูปแบบเดียวกับบันทึกทีละคน (saveBuddingR1)
     const item = {
-      id: uid(), ts: Date.now(), date: thaiStr,
+      id: uid(), ts: _bdc.ts, date: thaiStr,
       type: 'piece', amount: qty * rate,
       detail: `ติดตา รอบ1: อ้าง ${qty.toLocaleString('th-TH')} ต้น (฿${rate}/ต้น)`,
       workType: 'ติดตา รอบ1', qty: qty
@@ -7713,7 +7752,7 @@ function bdmSave(payNow) {
     w.history.push(item);
     if (!payNow) w.pending.push({ ...item });
     recalcWorker(w);
-    if (payNow) { const r = payItemNow(w, item, 'จ่ายเงินติดตา รอบ1 ทันที', thaiStr); paid += r.amt; ded += r.deduct; }
+    if (payNow) { const r = bdPayNow(w, item, 'จ่ายเงินติดตา รอบ1 ทันที', _bdc); paid += r.amt; ded += r.deduct; }
   });
   bdmDraft = {};
   document.getElementById('bdmSearch').value = '';
@@ -7795,10 +7834,10 @@ function saveBuddingR1(payNow) {
   let rate = parseFloat(document.getElementById('bdR1Rate')?.value);
   if (!Number.isFinite(rate) || rate < 0) rate = buddingSettings.rate1;
   const amount = qty * rate;
-  const thaiStr = thaiDateStr();
+  const _bdc = bdDateCtx(); const thaiStr = _bdc.thaiStr;
 
   const item = {
-    id: uid(), ts: Date.now(), date: thaiStr,
+    id: uid(), ts: _bdc.ts, date: thaiStr,
     type: 'piece', amount: amount,
     detail: `ติดตา รอบ1: อ้าง ${qty.toLocaleString('th-TH')} ต้น (฿${rate}/ต้น)`,
     workType: 'ติดตา รอบ1', qty: qty
@@ -7811,7 +7850,7 @@ function saveBuddingR1(payNow) {
   calcBuddingR1();
 
   if (payNow) {
-    const { amt, deduct } = payItemNow(w, item, 'จ่ายเงินติดตา รอบ1 ทันที', thaiStr);
+    const { amt, deduct } = bdPayNow(w, item, 'จ่ายเงินติดตา รอบ1 ทันที', _bdc);
     renderAll();
     saveData();
     let msg = `💵 บันทึก + จ่ายแล้ว ${amt.toFixed(2)} บาท (${qty} ต้น)`;
@@ -7873,10 +7912,10 @@ function saveBuddingR2(payNow) {
   const amount = survived * rate2;
   const diff = Math.max(0, totalR1 - survived);
   const diffPct = totalR1 > 0 ? (diff / totalR1 * 100).toFixed(1) : 0;
-  const thaiStr = thaiDateStr();
+  const _bdc = bdDateCtx(); const thaiStr = _bdc.thaiStr;
 
   const item = {
-    id: uid(), ts: Date.now(), date: thaiStr,
+    id: uid(), ts: _bdc.ts, date: thaiStr,
     type: 'piece', amount: amount,
     detail: `ติดตา รอบ2: รอด ${survived.toLocaleString('th-TH')} ต้น (ตาย ${diff.toLocaleString('th-TH')} ต้น ${diffPct}%, ฿${rate2}/ต้น)`,
     workType: 'ติดตา รอบ2', qty: survived
@@ -7889,7 +7928,7 @@ function saveBuddingR2(payNow) {
   calcBuddingR2();
 
   if (payNow) {
-    const { amt, deduct } = payItemNow(w, item, 'จ่ายเงินติดตา รอบ2 ทันที', thaiStr);
+    const { amt, deduct } = bdPayNow(w, item, 'จ่ายเงินติดตา รอบ2 ทันที', _bdc);
     renderAll();
     saveData();
     let msg = `💵 บันทึก + จ่ายแล้ว ${amt.toFixed(2)} บาท (รอด ${survived} ต้น)`;
