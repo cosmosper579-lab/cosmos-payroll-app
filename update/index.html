@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v142">
-<title>💰 จ่ายเงินคนงาน PRO v142</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v143">
+<title>💰 จ่ายเงินคนงาน PRO v143</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1008,7 +1008,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v142 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v143 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -1862,6 +1862,8 @@ body::before{
     <div class="set-sec">🔄 นำเข้า / ส่งออก</div>
     <div class="set-grid">
       <button class="set-item" onclick="settingsRun(()=>document.getElementById('buddingImportInput').click())"><i>🌱</i><span><b>นำเข้าติดตายาง</b><small>รวมข้อมูลจากระบบติดตายาง</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>openOffsetFixModal())"><i>➖</i><span><b>ให้ยอดล่วงหน้ากลับมาติดลบ</b><small>ค่าแรงที่ถูกหักกลบกับล่วงหน้าเอง → บันทึกว่าจ่ายเงินสดแล้ว</small></span></button>
+      <button class="set-item" onclick="settingsRun(()=>toggleAutoDeduct())"><i>⏱️</i><span><b>หักล่วงหน้าอัตโนมัติ: <span id="autoDedLbl">ปิด</span></b><small>ตอนกด "บันทึก + จ่ายเงินเลย" (ค่าเริ่มต้น ปิด = จ่ายเต็ม)</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>openUndoDedModal())"><i>↩️</i><span><b>ยกเลิกการหักล่วงหน้า</b><small>คืนยอดล่วงหน้าให้ค้างเหมือนเดิม (เลือกช่วงวันที่)</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>openJobFixModal())"><i>🔧</i><span><b>จัดรูปแบบงานเหมา</b><small>ทุกประเภท: ชื่อพิมพ์ผิด/บันทึกแบบเก่า ให้ค้นหาได้</small></span></button>
       <button class="set-item" onclick="settingsRun(()=>downloadCSV())"><i>📤</i><span><b>Export</b><small>ส่งออกประวัติเป็นไฟล์ CSV</small></span></button>
@@ -4767,9 +4769,24 @@ function saveData() {
 // คืนค่า appliedTo[] ไว้แปะกับรายการ withdraw เพื่อดูย้อนหลังได้ว่าเงินก้อนนี้จ่ายปิดงานอะไรไปบ้าง
 // v86: "บันทึก + จ่ายเงินเลย" = จ่ายเฉพาะงานที่เพิ่งบันทึก (ไม่กวาดยอดค้างเก่าทั้งหมด)
 // หักล่วงหน้าที่ค้างจากงานนี้ก่อน เหลือเท่าไหร่จ่ายเงินสด · ถ้าจ่ายได้ไม่ครบ ส่วนที่เหลือยังค้างจ่าย
-function payItemNow(w, item, detail, dateStr) {
+// v143: ปุ่ม "บันทึก + จ่ายเงินเลย" ทุกที่ — ค่าเริ่มต้นไม่หักล่วงหน้า/ยอดติดลบอัตโนมัติ (จ่ายเงินสดเต็มค่างาน)
+// เปิด "หักล่วงหน้าอัตโนมัติ" ได้ในตั้งค่า · forceDeduct: true = หัก, false = ไม่หัก, ไม่ส่ง = ตามตั้งค่า
+const AUTO_DEDUCT_KEY = 'payroll_auto_deduct_v143';
+function autoDeductOn() { try { return localStorage.getItem(AUTO_DEDUCT_KEY) === '1'; } catch (e) { return false; } }
+function payItemNow(w, item, detail, dateStr, forceDeduct) {
   recalcWorker(w);
   const itemAmt = round2(Math.max(0, Number(item.amount || 0)));
+  const doDeduct = forceDeduct === true || (forceDeduct !== false && autoDeductOn());
+  if (!doDeduct) {
+    if (itemAmt <= 0.004) return { amt: 0, deduct: 0 };
+    w.history.push({
+      id: uid(), ts: Math.max(Date.now(), Number(item.ts || 0) + 1), date: dateStr || thaiDateStr(),
+      type: 'withdraw', amount: -itemAmt, deducted: 0, detail,
+      appliedTo: [{ id: item.id, date: item.date, type: item.type, detail: item.detail, itemAmount: itemAmt, appliedAmt: itemAmt }]
+    });
+    recalcWorker(w);
+    return { amt: itemAmt, deduct: 0 };
+  }
   const _P = payableFor(w, 0, null);
   const advOwed = _P.advOwed;
   const payable = round2(Math.min(itemAmt, _P.totalAvailable));
@@ -17013,7 +17030,7 @@ function drPayDay(w, iso, deductAdv) {
     var wids = [], a = 0, d = 0;
     items.forEach(function (it) {
       var before = (w.history || []).length;
-      var r = payItemNow(w, { id: it.h.id, ts: it.h.ts, date: it.h.date, type: it.h.type, detail: it.h.detail, amount: it.rem }, 'จ่ายค่าแรง (รายวันวันนี้) หักล่วงหน้า', thaiDateStr());
+      var r = payItemNow(w, { id: it.h.id, ts: it.h.ts, date: it.h.date, type: it.h.type, detail: it.h.detail, amount: it.rem }, 'จ่ายค่าแรง (รายวันวันนี้) หักล่วงหน้า', thaiDateStr(), true);
       if ((w.history || []).length > before) wids.push(w.history[w.history.length - 1].id);
       a += r.amt; d += r.deduct;
     });
@@ -17341,6 +17358,91 @@ async function udSave() {
     renderAll(); saveData();
     udRender();
     toast('↩️ ยกเลิกการหักล่วงหน้าแล้ว ' + done + ' รายการ · ล่วงหน้ากลับมาค้าง ' + formatMoney(total));
+  });
+}
+</script>
+<!-- v143: ค่าแรงที่ถูก "หักกลบ" กับล่วงหน้าเอง (เพราะบันทึกย้อนหลัง) → บันทึกว่าจ่ายเงินสดแล้ว ให้ยอดกลับเป็นติดลบเท่าล่วงหน้า -->
+<div class="modal-bg" id="offsetFixModal" onclick="if(event.target===this)closeModal('offsetFixModal')">
+  <div class="modal" style="max-width:600px">
+    <h2>➖ ให้ยอดล่วงหน้ากลับมาติดลบ</h2>
+    <div style="font-size:.76rem;color:var(--ink3);text-align:center;margin-bottom:8px">คนเหล่านี้มี <b>ล่วงหน้าค้าง</b> และมี <b>ค่าแรงที่ยังไม่บันทึกจ่าย</b> ระบบเลยเอามาหักกลบกัน ยอดจึงขึ้น ฿0<br>ถ้า <b>จ่ายค่าแรงเป็นเงินสดไปแล้วจริง</b> ติ๊กแล้วกดบันทึก → ยอดจะกลับเป็น <b style="color:#dc2626">ติดลบเท่าล่วงหน้า</b><br>(รายการจ่ายลงวันเดียวกับค่าแรงวันสุดท้าย ไม่ปนกับเงินออกวันนี้)</div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:6px;font-size:.76rem">
+      <span style="cursor:pointer;color:var(--blue)" onclick="ofSelectAll(true)">✅ เลือกทั้งหมด</span>
+      <span style="cursor:pointer;color:var(--ink3)" onclick="ofSelectAll(false)">⬜ ไม่เลือกเลย</span>
+    </div>
+    <div id="ofBody" style="max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+    <div id="ofSummary" style="text-align:center;font-family:'Mitr';font-weight:700;font-size:.85rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="m-save" onclick="ofSave()">💵 บันทึกว่าจ่ายเงินสดแล้ว</button>
+      <button class="m-cancel" onclick="closeModal('offsetFixModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+<script id="offset-fix-v143-js">
+var _ofList = [];
+function toggleAutoDeduct() {
+  var on = !autoDeductOn();
+  try { localStorage.setItem(AUTO_DEDUCT_KEY, on ? '1' : '0'); } catch (e) {}
+  autoDedLblRefresh();
+  toast(on ? '⏱️ เปิดหักล่วงหน้าอัตโนมัติ — กด "จ่ายเงินเลย" จะหักล่วงหน้าที่ค้างก่อน' : '💵 ปิดหักล่วงหน้าอัตโนมัติ — กด "จ่ายเงินเลย" จะจ่ายเงินสดเต็มค่างาน');
+}
+function autoDedLblRefresh() { var el = document.getElementById('autoDedLbl'); if (el) el.textContent = autoDeductOn() ? 'เปิด' : 'ปิด'; }
+autoDedLblRefresh();
+function ofCollect() {
+  var out = [];
+  (workers || []).forEach(function (w) {
+    if (w.id == OWNER_ID) return;
+    recalcWorker(w);
+    var adv = round2(Number(w.advanceOwed) || 0);
+    var pend = (w.pending || []).filter(function (p) { return (Number(p.amount) || 0) > 0.004; });
+    var sum = round2(pend.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0));
+    if (adv <= 0.004 || sum <= 0.004) return;
+    var last = pend.reduce(function (m, p) { return Math.max(m, Number(p.ts) || 0); }, 0);
+    out.push({ w: w, adv: adv, pend: pend, sum: sum, last: last, bal: round2(w.balance || 0) });
+  });
+  return out.sort(function (a, b) { return b.adv - a.adv; });
+}
+function openOffsetFixModal() { ofRender(); openModal('offsetFixModal'); }
+function ofRender() {
+  _ofList = ofCollect();
+  var box = document.getElementById('ofBody');
+  if (!_ofList.length) { box.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:20px;font-size:.88rem">ไม่มีคนที่ยอดถูกหักกลบกับล่วงหน้า ✅</div>'; ofSum(); return; }
+  box.innerHTML = _ofList.map(function (e, i) {
+    var w = e.w;
+    var dates = e.pend.slice(0, 4).map(function (p) { return jdEscHtml((p.date || '') + ' ' + formatMoney(p.amount)); }).join(' · ') + (e.pend.length > 4 ? ' …' : '');
+    return '<label style="display:flex;gap:8px;align-items:flex-start;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer">'
+      + '<input type="checkbox" id="ofChk_' + i + '" checked onchange="ofSum()" style="margin-top:4px;width:17px;height:17px">'
+      + '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:6px"><b>' + (w.emoji || '👤') + ' ' + jdEscHtml(w.name) + '</b><span style="font-family:Mitr;font-size:.82rem">ยอด ' + (e.bal < 0 ? '-' : '') + formatMoney(Math.abs(e.bal)) + ' → <b style="color:#dc2626">' + (e.bal - e.sum < 0 ? '-' : '') + formatMoney(Math.abs(round2(e.bal - e.sum))) + '</b></span></div>'
+      + '<div style="font-size:.74rem;color:var(--ink2)">ล่วงหน้าค้าง ' + formatMoney(e.adv) + ' · ค่าแรงยังไม่บันทึกจ่าย ' + formatMoney(e.sum) + ' (' + e.pend.length + ' รายการ)</div>'
+      + '<div style="font-size:.7rem;color:var(--ink3);word-break:break-word">' + dates + '</div></div></label>';
+  }).join('');
+  ofSum();
+}
+function ofSelectAll(on) { _ofList.forEach(function (e, i) { var c = document.getElementById('ofChk_' + i); if (c) c.checked = on; }); ofSum(); }
+function ofSum() {
+  var n = 0, s = 0;
+  _ofList.forEach(function (e, i) { if (document.getElementById('ofChk_' + i)?.checked) { n++; s += e.sum; } });
+  document.getElementById('ofSummary').innerHTML = n ? ('เลือก ' + n + ' คน · บันทึกจ่ายเงินสดย้อนหลังรวม ' + formatMoney(round2(s)) + ' · ล่วงหน้ายังค้างเท่าเดิม') : '<span style="color:var(--ink3);font-weight:400">ยังไม่ได้เลือก</span>';
+}
+async function ofSave() {
+  var jobs = _ofList.filter(function (e, i) { return document.getElementById('ofChk_' + i)?.checked; });
+  if (!jobs.length) return toast('⚠️ ยังไม่ได้เลือก');
+  var total = round2(jobs.reduce(function (s, e) { return s + e.sum; }, 0));
+  if (!await uiConfirm('บันทึกว่าจ่ายค่าแรงเป็นเงินสดแล้ว ' + jobs.length + ' คน รวม ' + formatMoney(total) + ' ?\n\nยอดคนงานจะกลับเป็นติดลบเท่าล่วงหน้า (ล่วงหน้ายังค้างเท่าเดิม)\nรายการจ่ายลงวันเดียวกับค่าแรง ไม่ปนกับเงินออกวันนี้')) return;
+  requirePin('บันทึกจ่ายเงินสดย้อนหลัง ' + jobs.length + ' คน', function () {
+    jobs.forEach(function (e) {
+      var w = e.w, d = new Date(e.last + 1);
+      w.history.push({
+        id: uid(), ts: e.last + 1, date: thaiDateStr(d),
+        type: 'withdraw', amount: -e.sum, deducted: 0,
+        detail: 'บันทึกจ่ายเงินสดแล้ว (ไม่หักล่วงหน้า)',
+        appliedTo: e.pend.map(function (p) { return { id: p.id, date: p.date, type: p.type, detail: p.detail, itemAmount: Number(p.amount) || 0, appliedAmt: Number(p.amount) || 0 }; })
+      });
+      recalcWorker(w);
+    });
+    renderAll(); saveData();
+    ofRender();
+    toast('💵 บันทึกจ่ายเงินสดแล้ว ' + jobs.length + ' คน · ยอดกลับเป็นติดลบเท่าล่วงหน้า');
   });
 }
 </script>
