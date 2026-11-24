@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v139">
-<title>💰 จ่ายเงินคนงาน PRO v139</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v140">
+<title>💰 จ่ายเงินคนงาน PRO v140</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1008,7 +1008,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v139 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v140 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -3148,10 +3148,10 @@ function saveNewContractType() {
   toast(`✅ เพิ่มปุ่ม "${emoji} ${name}" แล้ว`);
 }
 
-function deleteCustomContractType(id) {
+async function deleteCustomContractType(id) {
   const t = getCustomContractType(id);
   if (!t) return;
-  if (!confirm(`ลบปุ่ม "${t.emoji} ${t.name}" ออกจากเมนู?\n(ประวัติที่บันทึกไปแล้วจะยังอยู่เหมือนเดิม ไม่ถูกลบ)`)) return;
+  if (!await uiConfirm(`ลบปุ่ม "${t.emoji} ${t.name}" ออกจากเมนู?\n(ประวัติที่บันทึกไปแล้วจะยังอยู่เหมือนเดิม ไม่ถูกลบ)`)) return;
 
   customContractTypes = customContractTypes.filter(x => x.id !== id);
   saveCustomContractTypes();
@@ -5212,11 +5212,11 @@ function onWorkerPhotoPicked(input) {
   });
 }
 
-function removeWorkerPhoto() {
+async function removeWorkerPhoto() {
   const w = workers.find(x => x.id == currentWid);
   if (!w) return toast('❌ ไม่พบคนงาน');
   if (!w.photo) return toast('ℹ️ คนงานนี้ยังไม่มีรูป');
-  if (!confirm('ลบรูปของ "' + w.name + '" ?')) return;
+  if (!await uiConfirm('ลบรูปของ "' + w.name + '" ?')) return;
   w.photo = null;    // ใช้ null แทน delete เพื่อให้ Firebase ลบฟิลด์นี้ตามไปด้วย
   recalcWorker(w);   // มาร์ก dirty → push การลบรูปขึ้น Firebase
   renderAll();
@@ -5528,7 +5528,8 @@ function renderSummary() {
   if (sAdvance) sAdvance.textContent = formatMoney(advanceToday);
   if (sTotal) sTotal.textContent = formatMoney(totalBalance);
   if (sGrandToday) sGrandToday.textContent = formatMoney(grandToday);
-  try { if (typeof drUpdateBadge === 'function') drUpdateBadge(); } catch (e) {}
+  // v140: อัปเดตตัวเลขปุ่มรายวันแบบหน่วงเล็กน้อย รวมหลายครั้งเป็นครั้งเดียว ไม่ให้หน้าหน่วงตอนบันทึก
+  try { clearTimeout(window._drBadgeT); window._drBadgeT = setTimeout(function () { if (typeof drUpdateBadge === 'function') drUpdateBadge(); }, 120); } catch (e) {}
 
   // breakdown เงินออกจากเก๊ะ (เบิก + ล่วงหน้า + เจ้าของจ่าย)
   const sGrandWithdraw = document.getElementById('sGrandWithdraw');
@@ -7732,13 +7733,18 @@ function bdmInput(wid, el) {
   if (row) row.classList.toggle('has', bdmQty(wid) > 0);
   bdmRender(true);
 }
-function bdmSave(payNow) {
+async function bdmSave(payNow) {
+  if (window._bdmBusy) return;
+  window._bdmBusy = true;
+  try { return await _bdmSaveInner(payNow); } finally { window._bdmBusy = false; }
+}
+async function _bdmSaveInner(payNow) {
   const rate = bdmRate();
   const jobs = workers.filter(w => w.id !== OWNER_ID && bdmQty(w.id) > 0).map(w => ({ w, qty: bdmQty(w.id) }));
   if (!jobs.length) return toast('❌ ยังไม่ได้ใส่จำนวนต้นให้ใคร');
   const trees = jobs.reduce((s, j) => s + j.qty, 0);
   const names = jobs.map(j => `${j.w.name} ${j.qty.toLocaleString('th-TH')} ต้น`).join('\n');
-  if (!confirm(`${bdDateCtx().back ? '⏪ ย้อนหลังวันที่ ' + bdDateCtx().thaiStr + '\n' : ''}บันทึกติดตา รอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น · ฿${(trees * rate).toLocaleString('th-TH', { minimumFractionDigits: 2 })}${payNow ? '\nและจ่ายเงินทันที' : ''}\n\n${names}`)) return;
+  if (!await uiConfirm(`${bdDateCtx().back ? '⏪ ย้อนหลังวันที่ ' + bdDateCtx().thaiStr + '\n' : ''}บันทึกติดตา รอบ1 ${jobs.length} คน · ${trees.toLocaleString('th-TH')} ต้น · ฿${(trees * rate).toLocaleString('th-TH', { minimumFractionDigits: 2 })}${payNow ? '\nและจ่ายเงินทันที' : ''}\n\n${names}`)) return;
   const _bdc = bdDateCtx(); const thaiStr = _bdc.thaiStr;
   let paid = 0, ded = 0;
   jobs.forEach(({ w, qty }) => {
@@ -11643,9 +11649,9 @@ document.addEventListener('DOMContentLoaded', init);
     render();
   };
 
-  window.cbmRemoveStore = function(storeId){
+  window.cbmRemoveStore = async function(storeId){
     if(state.stores.length <= 1){ alert('ต้องมีร้านอย่างน้อย 1 ร้าน'); return; }
-    if(!confirm('ลบร้านนี้ออก? ข้อมูลยอดจะยังอยู่ในประวัติ')) return;
+    if(!await uiConfirm('ลบร้านนี้ออก? ข้อมูลยอดจะยังอยู่ในประวัติ')) return;
     state.stores = state.stores.filter(s => s.id !== storeId);
     saveState();
     renderStoreInputs();
@@ -13251,7 +13257,7 @@ function attRender() {
   attUpdateCount();
 }
 
-function attSet(wid, status) {
+async function attSet(wid, status) {
   const { key, data } = attGetToday();
   const wasSame = data[key][wid] === status;
   if (wasSame) {
@@ -13273,7 +13279,7 @@ function attSet(wid, status) {
         if (typeof toast === 'function') toast(`ℹ️ ${w.name} มีรายการค่าแรงวันนี้อยู่แล้ว`);
       } else {
         const wage = workerRate(w);
-        const ok = confirm(`✅ "${w.name}" มาวันนี้\n\nบันทึกค่าแรง ฿${wage.toLocaleString('th-TH')} เข้าประวัติเลยไหม?\n(กด "ยกเลิก" ถ้าจะไปบันทึกเองภายหลัง)`);
+        const ok = await uiConfirm(`✅ "${w.name}" มาวันนี้\n\nบันทึกค่าแรง ฿${wage.toLocaleString('th-TH')} เข้าประวัติเลยไหม?\n(กด "ยกเลิก" ถ้าจะไปบันทึกเองภายหลัง)`);
         if (ok) {
           const item = {
             id: uid(), ts: Date.now(), date: todayStr,
@@ -16284,7 +16290,7 @@ function ssLive() {
 }
 
 /* ---------- บันทึก ---------- */
-function ssSave() {
+async function ssSave() {
   if (!ssCur || !ssCur.ocrDone) return;
   var owner = ssOwner();
   if (!owner) { toast('❌ ไม่พบข้อมูลกิจการ'); return; }
@@ -16296,7 +16302,7 @@ function ssSave() {
   if (a.v >= 10000000) { toast('⚠️ จำนวนเงินมากผิดปกติ ตรวจอีกครั้ง'); return; }
   if (!type) { ssEl('ssType').classList.add('need'); ssEl('ssType').focus(); toast('⚠️ เลือก "ซื้ออะไร" ก่อน'); return; }
   if (!iso || iso > ssTodayISO()) { toast('⚠️ วันที่ไม่ถูกต้อง'); return; }
-  if (a.v > 100000 && !confirm('ยอด ฿' + ssMoney(a.v) + ' สูงมาก ยืนยันว่าถูกต้อง?')) return;
+  if (a.v > 100000 && !await uiConfirm('ยอด ฿' + ssMoney(a.v) + ' สูงมาก ยืนยันว่าถูกต้อง?')) return;
   var now = new Date();
   var d = new Date(iso + 'T00:00:00');
   d.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
@@ -17013,7 +17019,13 @@ function drPayDay(w, iso) {
   recalcWorker(w);
   return { wids: [h.id], amt: amt, ded: 0, n: items.length };
 }
-function drToggle(wid, ev) {
+async function drToggle(wid, ev) {
+  if (ev) ev.stopPropagation();
+  if (window._drBusy) return;
+  window._drBusy = true;
+  try { return await _drToggleInner(wid); } finally { window._drBusy = false; }
+}
+async function _drToggleInner(wid, ev) {
   if (ev) ev.stopPropagation();
   var w = (workers || []).find(function (x) { return String(x.id) === String(wid); });
   if (!w) return;
@@ -17024,7 +17036,7 @@ function drToggle(wid, ev) {
     var adv = Number(w.advanceOwed || 0);
     var msg = 'จ่ายเงินสด ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังค้าง)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้\nไม่หักเงินล่วงหน้า'
       + (adv > 0 ? ' — ล่วงหน้าค้าง ' + formatMoney(adv) + ' ยังค้างไว้เหมือนเดิม' : '');
-    if (!confirm(msg)) return;
+    if (!await uiConfirm(msg)) return;
     var r = drPayDay(w, drDay);
     var old = info || { wids: [] };
     day[wid] = { ts: Date.now(), wids: (old.wids || []).concat(r.wids), amt: round2((old.amt || 0) + r.amt), ded: round2((old.ded || 0) + r.ded) };
@@ -17035,7 +17047,7 @@ function drToggle(wid, ev) {
     // จ่ายครบแล้วจากปุ่มนี้ → กดอีกที = ยกเลิกการจ่าย
     var made = (w.history || []).filter(function (h) { return info.wids.some(function (id) { return String(id) === String(h.id); }); });
     var back = round2(made.reduce(function (s, h) { return s + Math.abs(Number(h.amount) || 0); }, 0));
-    if (!confirm('ยกเลิก "จ่ายแล้ว" ของ ' + w.name + '?\nจะลบรายการเบิก/จ่าย ' + formatMoney(back) + ' ที่บันทึกจากหน้านี้ ยอดค้างจะกลับเป็นเหมือนเดิม')) return;
+    if (!await uiConfirm('ยกเลิก "จ่ายแล้ว" ของ ' + w.name + '?\nจะลบรายการเบิก/จ่าย ' + formatMoney(back) + ' ที่บันทึกจากหน้านี้ ยอดค้างจะกลับเป็นเหมือนเดิม')) return;
     w.history = (w.history || []).filter(function (h) { return made.indexOf(h) < 0; });
     recalcWorker(w);
     delete day[wid]; m[drDay] = day; drSavePaid(m);
@@ -17124,9 +17136,60 @@ function drCopy() {
     txt += (i + 1) + '. ' + r.w.name + ' ' + formatMoney(r.sum) + (r.b.owe > 0.004 ? ' ⏳' : ' ✅') + (parts.length ? ' (' + parts.join(' · ') + ')' : '') + '\n';
   });
   txt += 'รวม ' + rows.length + ' คน ' + formatMoney(total) + ' · จ่ายเงินสด ' + formatMoney(round2(cash)) + ' · ยังค้าง ' + formatMoney(round2(owe));
-  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('📋 คัดลอกสรุปแล้ว — วางใน LINE ได้เลย'); }).catch(function () { prompt('คัดลอกข้อความนี้', txt); });
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('📋 คัดลอกสรุปแล้ว — วางใน LINE ได้เลย'); }).catch(function () { uiAlert('คัดลอกข้อความนี้ด้วยตัวเอง:\n\n' + txt); });
 }
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('drModal').classList.contains('on')) drClose(); });
 window.addEventListener('storage', function (e) { if (e.key === DR_KEY) drUpdateBadge(); });
 setTimeout(drUpdateBadge, 800);
+</script>
+<!-- v140: กล่องยืนยันในหน้าเว็บ แทน confirm()/alert() ของเบราว์เซอร์
+     สาเหตุ: ในโปรแกรมบนคอม (Electron) หลังกล่อง confirm/alert ของระบบปิด หน้าต่างเสียโฟกัส → กดปุ่ม/พิมพ์ไม่ได้ -->
+<style id="ui-dlg-v140">
+#uiDlg{position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:16px}
+#uiDlg.on{display:flex}
+#uiDlg .box{background:#fff;border-radius:18px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(15,23,42,.35);overflow:hidden;font-family:'Sarabun','Mitr',sans-serif}
+#uiDlg .msg{padding:20px 20px 12px;white-space:pre-wrap;font-size:.95rem;line-height:1.6;color:#1e293b;max-height:60vh;overflow:auto;user-select:text}
+#uiDlg .btns{display:flex;gap:8px;padding:10px 16px 16px}
+#uiDlg .btns button{flex:1;border:none;border-radius:12px;padding:12px;font-family:'Mitr';font-size:.95rem;cursor:pointer}
+#uiDlg .ok{background:#16a34a;color:#fff}
+#uiDlg .cancel{background:#f1f5f9;color:#334155}
+</style>
+<div id="uiDlg" role="dialog" aria-modal="true"><div class="box"><div class="msg" id="uiDlgMsg"></div><div class="btns"><button type="button" class="cancel" id="uiDlgNo">ยกเลิก</button><button type="button" class="ok" id="uiDlgYes">ตกลง</button></div></div></div>
+<script id="ui-dlg-v140-js">
+var _uiDlgQ = [], _uiDlgBusy = false;
+function _uiDlgNext() {
+  if (_uiDlgBusy || !_uiDlgQ.length) return;
+  _uiDlgBusy = true;
+  var job = _uiDlgQ.shift();
+  var root = document.getElementById('uiDlg'), yes = document.getElementById('uiDlgYes'), no = document.getElementById('uiDlgNo');
+  document.getElementById('uiDlgMsg').textContent = String(job.msg == null ? '' : job.msg);
+  no.style.display = job.alert ? 'none' : '';
+  yes.textContent = job.alert ? 'ตกลง' : (job.okText || 'ตกลง');
+  root.classList.add('on');
+  var prevFocus = document.activeElement;
+  function done(v) {
+    root.classList.remove('on');
+    yes.onclick = no.onclick = null; root.onclick = null;
+    document.removeEventListener('keydown', onKey, true);
+    _uiDlgBusy = false;
+    try { if (prevFocus && prevFocus.focus && document.contains(prevFocus)) prevFocus.focus(); } catch (e) {}
+    job.resolve(v);
+    setTimeout(_uiDlgNext, 0);
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(job.alert ? true : false); }
+    else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(true); }
+  }
+  yes.onclick = function () { done(true); };
+  no.onclick = function () { done(false); };
+  root.onclick = function (e) { if (e.target === root) done(job.alert ? true : false); };
+  document.addEventListener('keydown', onKey, true);
+  setTimeout(function () { yes.focus(); }, 30);
+}
+function uiConfirm(msg, okText) { return new Promise(function (res) { _uiDlgQ.push({ msg: msg, okText: okText, resolve: res }); _uiDlgNext(); }); }
+function uiAlert(msg) { return new Promise(function (res) { _uiDlgQ.push({ msg: msg, alert: true, resolve: res }); _uiDlgNext(); }); }
+// alert() เดิมทุกจุด → กล่องในหน้า (ไม่ทำให้หน้าต่างค้าง)
+window.alert = function (m) { uiAlert(m); };
+// กันพลาด: ถ้าหน้าต่างกลับมาโฟกัสแต่ไม่มีอะไรโฟกัสอยู่ ให้โฟกัสหน้าเว็บ
+window.addEventListener('focus', function () { try { if (!document.activeElement || document.activeElement === document.body) document.body.focus(); } catch (e) {} });
 </script>
