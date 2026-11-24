@@ -4,8 +4,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<meta name="application-name" content="จ่ายเงินคนงาน PRO v136">
-<title>💰 จ่ายเงินคนงาน PRO v136</title>
+<meta name="application-name" content="จ่ายเงินคนงาน PRO v138">
+<title>💰 จ่ายเงินคนงาน PRO v138</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1004,7 +1004,7 @@ body::before{
     <button class="sd-item" onclick="openLedgerAudit()"><i>🧮</i><span>ตรวจยอด / ค่าแรงมาตรฐาน</span></button>
   </nav>
   <button class="sd-cta" onclick="backupJSON()"><b>💾 สำรองข้อมูลตอนนี้</b><small>ข้อมูลบันทึกอัตโนมัติ · กดเพื่อเก็บไฟล์สำรองเพิ่ม</small></button>
-  <div class="sd-foot">PRO v136 · คนงานรายวัน</div>
+  <div class="sd-foot">PRO v138 · คนงานรายวัน</div>
 </aside>
 
 <div class="hdr">
@@ -16806,6 +16806,11 @@ body:has(#cbm-panel.open) #drFab,body.ss-open #drFab,body:has(#drModal.on) #drFa
 .dr-row.paid .dr-tick{border-color:#16a34a;color:#15803d;background:#dcfce7}
 .dr-row.paid .dr-tick .bx{background:#16a34a;border-color:#16a34a}
 .dr-row .open{font-size:.72rem;color:#4f46e5;text-decoration:underline;cursor:pointer}
+.dr-rec{margin:0 18px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:8px 10px;font-size:.76rem;color:#78350f;line-height:1.55}
+.dr-rec b{font-family:'Mitr'}
+.dr-split{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.dr-split span{font-size:.68rem;border-radius:999px;padding:1px 7px;background:#f1f5f9;color:#334155;white-space:nowrap}
+.dr-split .c{background:#dcfce7;color:#14532d}.dr-split .d{background:#fee2e2;color:#991b1b}.dr-split .o{background:#ffedd5;color:#9a3412}.dr-split .p{background:#fef3c7;color:#92400e;font-weight:700}
 .dr-empty{text-align:center;color:#94a3b8;padding:30px 10px;font-size:.9rem}
 .dr-foot{display:flex;gap:8px;padding:10px 18px 16px;border-top:1px solid #f1f5f9}
 .dr-foot button{flex:1;border:none;border-radius:12px;padding:11px;font-family:'Mitr';font-size:.9rem;cursor:pointer}
@@ -16827,9 +16832,10 @@ body:has(#cbm-panel.open) #drFab,body.ss-open #drFab,body:has(#drModal.on) #drFa
     </div>
     <div class="dr-sum">
       <div><div class="k">👥 ได้เงิน</div><div class="v" id="drPeople">0 คน</div></div>
-      <div><div class="k">💰 รวมวันนี้</div><div class="v" id="drTotal" style="color:#15803d">฿0</div></div>
-      <div><div class="k">⏳ ยังไม่ติ๊กจ่าย</div><div class="v" id="drUnpaid" style="color:#dc2626">฿0</div></div>
+      <div><div class="k">💰 รวมค่าแรงวันนี้</div><div class="v" id="drTotal" style="color:#15803d">฿0</div></div>
+      <div><div class="k">⏳ ยังค้างจ่าย</div><div class="v" id="drUnpaid" style="color:#dc2626">฿0</div></div>
     </div>
+    <div class="dr-rec" id="drRec"></div>
     <div class="dr-tools">
       <input type="text" id="drSearch" placeholder="🔍 พิมพ์ค้นหาชื่อ…" oninput="drRender()">
       <span><label style="cursor:pointer"><input type="checkbox" id="drHidePaid" onchange="drRender()" style="vertical-align:middle"> ซ่อนที่จ่ายแล้ว</label></span>
@@ -16877,14 +16883,45 @@ function drItemText(h) {
   var t = h.detail || (h.type === 'attendance' ? 'ค่าแรงรายวัน' : (h.type === 'bonus' ? 'โบนัส' : 'งานเหมา'));
   return t + ' ' + formatMoney(h.amount);
 }
+// v137: แยกค่าแรงแต่ละรายการว่าไปไหน — จากข้อมูลจริงในบัญชี (ไม่ได้ดูจากติ๊ก)
+//  เงินสด = ส่วนที่รายการเบิก/จ่ายปิดยอดให้ (คิดตามสัดส่วนเงินสด)
+//  หักล่วงหน้า = ส่วนที่รายการเบิก/จ่ายหักเงินล่วงหน้าแทนเงินสด
+//  ยังค้าง = ส่วนที่ยังไม่ได้จ่าย
+//  หักยอดติดลบเดิม = ส่วนที่เหลือ (ค่าแรงไปใช้คืนยอดที่คนงานติดเงินเราอยู่ก่อน)
+function drBreak(w, items) {
+  var ids = {}; items.forEach(function (h) { ids[String(h.id)] = true; });
+  var cash = 0, ded = 0, owe = 0, sum = 0;
+  (w.history || []).forEach(function (x) {
+    if (x.type !== 'withdraw' || !Array.isArray(x.appliedTo)) return;
+    var amt = Math.abs(Number(x.amount) || 0), d = Number(x.deducted) || 0;
+    var tot = x.appliedTo.reduce(function (s, a) { return s + (Number(a.appliedAmt) || 0); }, 0);
+    if (tot <= 0.004) return;
+    x.appliedTo.forEach(function (a) {
+      if (!ids[String(a.id)]) return;
+      var share = Number(a.appliedAmt) || 0;
+      cash += share * Math.min(amt, tot) / tot;
+      ded += share * Math.min(d, tot) / tot;
+    });
+  });
+  items.forEach(function (h) {
+    sum += Number(h.amount) || 0;
+    var p = (w.pending || []).find(function (q) { return String(q.id) === String(h.id); });
+    if (p) owe += Number(p.amount) || 0;
+  });
+  cash = round2(cash); ded = round2(ded); owe = round2(owe); sum = round2(sum);
+  var off = round2(Math.max(0, sum - cash - ded - owe));
+  return { sum: sum, cash: cash, ded: ded, owe: owe, off: off };
+}
+function drRowsFull(iso) {
+  return drCollect(iso).map(function (r) { r.b = drBreak(r.w, r.items); return r; });
+}
 function drUpdateBadge() {
   var b = document.getElementById('drBadge');
   if (!b) return;
-  var iso = localISO(), paid = drPaidMap()[iso] || {};
-  var n = drCollect(iso).filter(function (r) { return !paid[r.w.id]; }).length;
+  // ตัวเลขแดง = จำนวนคนที่ยังค้างค่าแรงวันนี้ (นับจากบัญชีจริง)
+  var n = drRowsFull(localISO()).filter(function (r) { return r.b.owe > 0.004; }).length;
   b.textContent = n;
   b.classList.toggle('zero', !n);
-  // มีคนได้เงินเพิ่ม (เพิ่งคีย์รายการ) → ปุ่มเด้งให้เห็น
   if (_drLastCount >= 0 && n > _drLastCount) {
     var f = document.getElementById('drFab');
     if (f) { f.classList.remove('pulse'); void f.offsetWidth; f.classList.add('pulse'); }
@@ -16919,17 +16956,23 @@ function drUnpaidItems(w, iso) {
   });
   return out;
 }
+// v138: จ่ายค่าแรงจากหน้านี้ = จ่ายเงินสดเต็มจำนวนที่ค้าง "ไม่หักล่วงหน้า" และไม่หักยอดติดลบเดิม (ผู้ใช้กำหนด)
+// บันทึกเป็นเบิก/จ่าย 1 รายการต่อคน ปิดยอดค่าแรงวันนั้นที่ค้างอยู่ (appliedTo) — เงินล่วงหน้า/ยอดติดลบเดิมยังค้างไว้เหมือนเดิม
 function drPayDay(w, iso) {
   recalcWorker(w);
-  var items = drUnpaidItems(w, iso), wids = [], amt = 0, ded = 0;
-  var dstr = thaiDateStr(new Date(iso + 'T12:00:00'));
-  items.forEach(function (it) {
-    var before = (w.history || []).length;
-    var r = payItemNow(w, { id: it.h.id, ts: it.h.ts, date: it.h.date, type: it.h.type, detail: it.h.detail, amount: it.rem }, 'จ่ายค่าแรง (รายวันวันนี้)', dstr);
-    if ((w.history || []).length > before) wids.push(w.history[w.history.length - 1].id);
-    amt += r.amt; ded += r.deduct;
-  });
-  return { wids: wids, amt: round2(amt), ded: round2(ded), n: items.length };
+  var items = drUnpaidItems(w, iso);
+  if (!items.length) return { wids: [], amt: 0, ded: 0, n: 0 };
+  var amt = round2(items.reduce(function (s, it) { return s + it.rem; }, 0));
+  var lastTs = items.reduce(function (m, it) { return Math.max(m, Number(it.h.ts) || 0); }, 0);
+  var h = {
+    id: uid(), ts: Math.max(Date.now(), lastTs + 1), date: thaiDateStr(),
+    type: 'withdraw', amount: -amt, deducted: 0,
+    detail: 'จ่ายค่าแรง (รายวันวันนี้) ไม่หักล่วงหน้า',
+    appliedTo: items.map(function (it) { return { id: it.h.id, date: it.h.date, type: it.h.type, detail: it.h.detail, itemAmount: it.rem, appliedAmt: it.rem }; })
+  };
+  w.history.push(h);
+  recalcWorker(w);
+  return { wids: [h.id], amt: amt, ded: 0, n: items.length };
 }
 function drToggle(wid, ev) {
   if (ev) ev.stopPropagation();
@@ -16937,36 +16980,30 @@ function drToggle(wid, ev) {
   if (!w) return;
   var m = drPaidMap(), day = m[drDay] || {}, info = drTickInfo(day[wid]);
   var unpaid = drUnpaidItems(w, drDay), unpaidSum = round2(unpaid.reduce(function (s, it) { return s + it.rem; }, 0));
-  if (!info || (info && !info.wids.length && unpaid.length)) {
-    // ติ๊กจ่าย (หรือเคยติ๊กแบบเก่าที่ยังไม่ได้บันทึกเงินออก)
-    if (unpaid.length) {
-      var adv = Number(w.advanceOwed || 0);
-      var msg = 'จ่ายเงิน ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังไม่จ่าย)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้'
-        + (adv > 0 ? '\n⚠️ มีเงินล่วงหน้าค้าง ' + formatMoney(adv) + ' ระบบจะหักให้ก่อนตามปกติ' : '');
-      if (!confirm(msg)) return;
-      var r = drPayDay(w, drDay);
-      day[wid] = { ts: Date.now(), wids: r.wids, amt: r.amt, ded: r.ded };
-      m[drDay] = day; drSavePaid(m);
-      renderAll(); saveData();
-      toast('💵 จ่าย ' + w.name + ' ' + formatMoney(r.amt) + (r.ded > 0 ? ' · หักล่วงหน้า ' + formatMoney(r.ded) : '') + ' — ขึ้นในเบิกเงินวันนี้แล้ว');
-    } else {
-      // ค่าแรงวันนี้จ่ายไปแล้ว (เช่น กด "บันทึก + จ่ายเงินเลย" ตอนคีย์) — ติ๊กไว้ดูอย่างเดียว
-      day[wid] = { ts: Date.now(), wids: [], already: true };
-      m[drDay] = day; drSavePaid(m);
-      toast('✅ ' + w.name + ' จ่ายไปแล้วตอนบันทึก — ติ๊กไว้ให้');
-    }
-  } else {
-    // เอาติ๊กออก → ลบรายการจ่ายที่ติ๊กนี้สร้าง
-    if (info.wids.length) {
-      var made = (w.history || []).filter(function (h) { return info.wids.some(function (id) { return String(id) === String(h.id); }); });
-      var back = round2(made.reduce(function (s, h) { return s + Math.abs(Number(h.amount) || 0); }, 0));
-      if (!confirm('เอาติ๊ก "จ่ายแล้ว" ของ ' + w.name + ' ออก?\nจะลบรายการเบิก/จ่าย ' + formatMoney(back) + ' ที่ติ๊กนี้บันทึกไว้ ยอดค้างจะกลับเป็นเหมือนเดิม')) return;
-      w.history = (w.history || []).filter(function (h) { return !made.includes(h); });
-      recalcWorker(w);
-      renderAll(); saveData();
-    }
-    delete day[wid];
+  if (unpaid.length) {
+    // ยังค้าง → จ่าย
+    var adv = Number(w.advanceOwed || 0);
+    var msg = 'จ่ายเงินสด ' + w.name + ' ' + formatMoney(unpaidSum) + ' (ค่าแรงวันนี้ที่ยังค้าง)?\n\nจะบันทึกเป็น "เบิก/จ่าย" และขึ้นใน 🔔 เบิกเงินวันนี้\nไม่หักเงินล่วงหน้า'
+      + (adv > 0 ? ' — ล่วงหน้าค้าง ' + formatMoney(adv) + ' ยังค้างไว้เหมือนเดิม' : '');
+    if (!confirm(msg)) return;
+    var r = drPayDay(w, drDay);
+    var old = info || { wids: [] };
+    day[wid] = { ts: Date.now(), wids: (old.wids || []).concat(r.wids), amt: round2((old.amt || 0) + r.amt), ded: round2((old.ded || 0) + r.ded) };
     m[drDay] = day; drSavePaid(m);
+    renderAll(); saveData();
+    toast('💵 จ่าย ' + w.name + ' เงินสด ' + formatMoney(r.amt) + ' (ไม่หักล่วงหน้า) — ขึ้นในเบิกเงินวันนี้แล้ว');
+  } else if (info && info.wids && info.wids.length) {
+    // จ่ายครบแล้วจากปุ่มนี้ → กดอีกที = ยกเลิกการจ่าย
+    var made = (w.history || []).filter(function (h) { return info.wids.some(function (id) { return String(id) === String(h.id); }); });
+    var back = round2(made.reduce(function (s, h) { return s + Math.abs(Number(h.amount) || 0); }, 0));
+    if (!confirm('ยกเลิก "จ่ายแล้ว" ของ ' + w.name + '?\nจะลบรายการเบิก/จ่าย ' + formatMoney(back) + ' ที่บันทึกจากหน้านี้ ยอดค้างจะกลับเป็นเหมือนเดิม')) return;
+    w.history = (w.history || []).filter(function (h) { return made.indexOf(h) < 0; });
+    recalcWorker(w);
+    delete day[wid]; m[drDay] = day; drSavePaid(m);
+    renderAll(); saveData();
+    toast('↩️ ยกเลิกการจ่ายของ ' + w.name + ' แล้ว');
+  } else {
+    toast('✅ ' + w.name + ' จ่ายครบแล้ว (จ่ายจากหน้าคนงาน/ตอนบันทึก) — ถ้าจะแก้ ให้ไปที่หน้าคนงาน');
   }
   drRender(); drUpdateBadge();
 }
@@ -16980,51 +17017,74 @@ function drRender() {
   document.getElementById('drTitle').textContent = isToday ? 'รายวันวันนี้' : 'รายวัน';
   document.getElementById('drDateLbl').textContent = drThaiDate(iso) + (isToday ? ' (วันนี้)' : '');
   document.getElementById('drNext').disabled = isToday;
-  var paid = drPaidMap()[iso] || {};
-  var rows = drCollect(iso);
-  var total = 0, unpaid = 0;
-  rows.forEach(function (r) { total += r.sum; if (!paid[r.w.id]) unpaid += r.sum; });
+  var ticks = drPaidMap()[iso] || {};
+  var rows = drRowsFull(iso);
+  var T = { sum: 0, cash: 0, ded: 0, owe: 0, off: 0 };
+  rows.forEach(function (r) { ['sum', 'cash', 'ded', 'owe', 'off'].forEach(function (k) { T[k] += r.b[k]; }); });
+  Object.keys(T).forEach(function (k) { T[k] = round2(T[k]); });
   document.getElementById('drPeople').textContent = rows.length + ' คน';
-  document.getElementById('drTotal').textContent = formatMoney(total);
-  document.getElementById('drUnpaid').textContent = formatMoney(unpaid);
+  document.getElementById('drTotal').textContent = formatMoney(T.sum);
+  document.getElementById('drUnpaid').textContent = formatMoney(T.owe);
+  // กระทบยอดกับ "เบิกเงินวันนี้"
+  var cashOut = 0;
+  try { var dt = dayTotals(iso); cashOut = round2(dt.withdraw + dt.advance + dt.equip); } catch (e) {}
+  var other = round2(cashOut - T.cash);
+  var rec = '<b>ค่าแรง ' + formatMoney(T.sum) + '</b> = 💵 จ่ายเงินสด <b>' + formatMoney(T.cash) + '</b>'
+    + (T.ded ? ' + ⏱️ หักล่วงหน้า <b>' + formatMoney(T.ded) + '</b>' : '')
+    + (T.off ? ' + ➖ หักยอดติดลบเดิม <b>' + formatMoney(T.off) + '</b>' : '')
+    + ' + ⏳ ยังค้าง <b>' + formatMoney(T.owe) + '</b>'
+    + '<br>🔔 เงินออกจากเก๊ะวันนี้ทั้งหมด <b>' + formatMoney(cashOut) + '</b>'
+    + (Math.abs(other) > 0.004 ? (other > 0 ? ' (ค่าแรงวันนี้ ' + formatMoney(T.cash) + ' + เบิก/ล่วงหน้า/ซื้อของอื่น ' + formatMoney(other) + ')' : ' (ค่าแรงวันนี้บางส่วนจ่ายไปวันอื่น)') : ' — ตรงกับค่าแรงที่จ่ายเงินสด ✅');
+  document.getElementById('drRec').innerHTML = rows.length ? rec : '';
   var q = (document.getElementById('drSearch').value || '').trim().toLowerCase();
   var hidePaid = document.getElementById('drHidePaid').checked;
   var list = rows.filter(function (r) {
     if (q && String(r.w.name || '').toLowerCase().indexOf(q) < 0) return false;
-    if (hidePaid && paid[r.w.id]) return false;
+    if (hidePaid && r.b.owe <= 0.004) return false;
     return true;
   });
-  // ยังไม่จ่ายขึ้นก่อน แล้วเรียงยอดมากไปน้อย
-  list.sort(function (a, b) { return (!!paid[a.w.id] - !!paid[b.w.id]) || (b.sum - a.sum); });
+  list.sort(function (a, b) { return ((a.b.owe <= 0.004) - (b.b.owe <= 0.004)) || (b.sum - a.sum); });
   var box = document.getElementById('drList');
   if (!rows.length) { box.innerHTML = '<div class="dr-empty">' + (isToday ? 'วันนี้ยังไม่มีใครได้เงิน<br><small>คีย์รายวันหรืองานเหมาแล้ว รายชื่อจะขึ้นที่นี่เอง</small>' : 'วันนี้ไม่มีรายการได้เงิน') + '</div>'; return; }
   if (!list.length) { box.innerHTML = '<div class="dr-empty">ไม่พบรายชื่อที่ค้นหา</div>'; return; }
   box.innerHTML = list.map(function (r) {
-    var w = r.w, isPaid = !!paid[w.id];
-    var tinfo = drTickInfo(paid[w.id]);
-    var stillOwe = isPaid && tinfo && !tinfo.wids.length && !tinfo.already && drUnpaidItems(w, iso).length;
+    var w = r.w, B = r.b, done = B.owe <= 0.004;
+    var info = drTickInfo(ticks[w.id]);
     var av = w.photo ? '<img class="w-photo" src="' + w.photo + '" alt="">' : (w.emoji || '👤');
     var lines = r.items.map(function (h) { return '<div class="ln">• ' + jdEscHtml(drItemText(h)) + '</div>'; }).join('');
     var bal = w.balance || 0;
-    var paidAt = isPaid ? new Date(tinfo.ts) : null;
-    return '<div class="dr-row' + (isPaid ? ' paid' : '') + '" onclick="drToggle(' + JSON.stringify(w.id) + ')">'
+    var split = '<div class="dr-split">'
+      + (B.cash ? '<span class="c">💵 เงินสด ' + formatMoney(B.cash) + '</span>' : '')
+      + (B.ded ? '<span class="d">⏱️ หักล่วงหน้า ' + formatMoney(B.ded) + '</span>' : '')
+      + (B.off ? '<span class="o">➖ หักยอดติดลบเดิม ' + formatMoney(B.off) + '</span>' : '')
+      + (B.owe ? '<span class="p">⏳ ยังค้าง ' + formatMoney(B.owe) + '</span>' : '')
+      + '</div>';
+    var tm = info && info.ts ? new Date(info.ts) : null;
+    var lbl = done ? ('จ่ายแล้ว' + (tm ? ' ' + String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0') : '')) : 'ยังไม่จ่าย';
+    return '<div class="dr-row' + (done ? ' paid' : '') + '" onclick="drToggle(' + JSON.stringify(w.id) + ')">'
       + '<div class="av">' + av + '</div>'
-      + '<div class="mid"><div class="nm">' + jdEscHtml(w.name) + '</div>' + lines
+      + '<div class="mid"><div class="nm">' + jdEscHtml(w.name) + '</div>' + lines + split
       + '<div class="bal">ยอดค้างทั้งหมดตอนนี้ ' + (bal < 0 ? '-' : '') + formatMoney(Math.abs(bal)) + ' · <span class="open" onclick="drOpenWorker(' + JSON.stringify(w.id) + ',event)">เปิดหน้าคนงาน ›</span></div></div>'
       + '<div class="rt"><div class="amt">' + formatMoney(r.sum) + '</div>'
-      + '<div class="dr-tick"><span class="bx">' + (isPaid ? '✓' : '') + '</span>' + (isPaid ? 'จ่ายแล้ว ' + String(paidAt.getHours()).padStart(2, '0') + ':' + String(paidAt.getMinutes()).padStart(2, '0') : 'ยังไม่จ่าย') + '</div>'
-      + (stillOwe ? '<div style="font-size:.66rem;color:#b45309;font-weight:700;text-align:right">⚠️ ยังไม่ได้บันทึกเงินออก<br>กดเพื่อบันทึก</div>' : '')
-      + (isPaid && tinfo && tinfo.wids.length ? '<div style="font-size:.66rem;color:#15803d;text-align:right">💵 บันทึกเบิก/จ่ายแล้ว</div>' : '')
-      + '</div>'
-      + '</div>';
+      + '<div class="dr-tick"><span class="bx">' + (done ? '✓' : '') + '</span>' + lbl + '</div>'
+      + (!done && info ? '<div style="font-size:.66rem;color:#b45309;font-weight:700;text-align:right">⚠️ ติ๊กไว้แต่ยังค้าง<br>กดเพื่อบันทึกจ่าย</div>' : '')
+      + '</div></div>';
   }).join('');
 }
 function drCopy() {
   var iso = drDay || localISO(), paid = drPaidMap()[iso] || {};
-  var rows = drCollect(iso), total = 0;
+  var rows = drRowsFull(iso), total = 0, cash = 0, owe = 0;
   var txt = '📋 รายวัน ' + drThaiDate(iso) + '\n';
-  rows.forEach(function (r, i) { total += r.sum; txt += (i + 1) + '. ' + r.w.name + ' ' + formatMoney(r.sum) + (paid[r.w.id] ? ' ✅ จ่ายแล้ว' : ' ⏳ ยังไม่จ่าย') + '\n'; });
-  txt += 'รวม ' + rows.length + ' คน ' + formatMoney(total);
+  rows.forEach(function (r, i) {
+    total += r.sum; cash += r.b.cash; owe += r.b.owe;
+    var parts = [];
+    if (r.b.cash) parts.push('เงินสด ' + formatMoney(r.b.cash));
+    if (r.b.ded) parts.push('หักล่วงหน้า ' + formatMoney(r.b.ded));
+    if (r.b.off) parts.push('หักติดลบเดิม ' + formatMoney(r.b.off));
+    if (r.b.owe) parts.push('ยังค้าง ' + formatMoney(r.b.owe));
+    txt += (i + 1) + '. ' + r.w.name + ' ' + formatMoney(r.sum) + (r.b.owe > 0.004 ? ' ⏳' : ' ✅') + (parts.length ? ' (' + parts.join(' · ') + ')' : '') + '\n';
+  });
+  txt += 'รวม ' + rows.length + ' คน ' + formatMoney(total) + ' · จ่ายเงินสด ' + formatMoney(round2(cash)) + ' · ยังค้าง ' + formatMoney(round2(owe));
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('📋 คัดลอกสรุปแล้ว — วางใน LINE ได้เลย'); }).catch(function () { prompt('คัดลอกข้อความนี้', txt); });
 }
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('drModal').classList.contains('on')) drClose(); });
